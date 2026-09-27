@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "667888455806",
+    "project_id": "tigerdenfb",
+    "storage_bucket": "tigerdenfb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:667888455806:android:aad305b63d23a0c08a482f",
+        "android_client_info": {
+          "package_name": "com.example.tiger_den"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoJNa1png3SMuyXkdn1r_fO1S_YT78veA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
