@@ -4,161 +4,236 @@ import '../models/event.dart';
 import '../models/organization.dart';
 import '../services/firestore_service.dart';
 
-/// Fills Firestore with sample users, clubs, events, RSVPs, and calendar
-/// entries so the frontend has real-looking data to display.
+/// Fills Firestore with LABELED test data so it's obvious what each
+/// document is for when testing (e.g. "User A's Club", "User E's Event").
+///
+/// Test users and what each one is for:
+///   User A - owner of User A's Club
+///   User B - owner of User B's Club, AND admin in User A's Club
+///   User C - regular member of User A's Club, approved member of User B's Club
+///   User D - PENDING member of User B's Club (waiting for approval)
+///   User E - in no clubs; hosts their own event and RSVPs to others
 ///
 /// HOW TO RUN IT (one time):
-///   In main.dart, right after `await Firebase.initializeApp(...)`, add:
-///       await seedSampleData();
-///   Run the app once, check the Firebase Console, then DELETE that line
-///   so it doesn't create duplicates every launch.
+///   1. Delete the old users / organizations / events collections in the
+///      Firebase console first, so old and new test data don't mix.
+///   2. In main.dart, add `import 'dev/seed_data.dart';` at the top, and
+///      `await seedSampleData();` right after `await Firebase.initializeApp(...)`.
+///   3. Run the app once, check the Firebase console, then REMOVE those
+///      lines so it doesn't create duplicates every launch.
 ///
-/// Note: these sample users are profile documents only, not real login
+/// Note: these test users are profile documents only, not real login
 /// accounts, so you can't log in as them. Real users come from sign up.
 Future<void> seedSampleData() async {
   final db = FirestoreService();
 
-  // ---- Users ---------------------------------------------------------------
-  final alex = AppUser(
-    id: 'sample_user_alex',
-    email: 'alex@example.com',
-    username: 'alexr',
-    displayName: 'Alex Rivera',
-    firstName: 'Alex',
-    lastName: 'Rivera',
-    bio: 'CS junior. Board games and bad puns.',
-    major: 'Computer Science',
-    gradYear: 2028,
-    interests: ['games', 'tech'],
-  );
-  final jordan = AppUser(
-    id: 'sample_user_jordan',
-    email: 'jordan@example.com',
-    username: 'jordanl',
-    displayName: 'Jordan Lee',
-    firstName: 'Jordan',
-    lastName: 'Lee',
-    bio: 'Runner, photographer, coffee enthusiast.',
-    major: 'Biology',
-    gradYear: 2027,
-    interests: ['fitness', 'photography'],
-  );
-  await db.createUserProfile(alex);
-  await db.createUserProfile(jordan);
+  // ---------------------------------------------------------------------------
+  // Users
+  // ---------------------------------------------------------------------------
+  AppUser testUser(String letter, String role) => AppUser(
+        id: 'test_user_${letter.toLowerCase()}',
+        email: 'user${letter.toLowerCase()}@test.com',
+        username: 'user_${letter.toLowerCase()}',
+        displayName: 'User $letter',
+        firstName: 'User',
+        lastName: letter,
+        bio: 'TEST USER: $role',
+        major: 'Test Major',
+        gradYear: 2028,
+        interests: ['testing'],
+      );
 
-  // ---- Organizations -------------------------------------------------------
-  final chessClubId = await db.createOrganization(
+  final userA = testUser('A', 'Owner of User A\'s Club');
+  final userB = testUser(
+      'B', 'Owner of User B\'s Club, admin in User A\'s Club');
+  final userC = testUser(
+      'C', 'Member of User A\'s Club and User B\'s Club');
+  final userD = testUser('D', 'Pending member of User B\'s Club');
+  final userE = testUser('E', 'In no clubs; hosts own event, RSVPs to others');
+
+  for (final u in [userA, userB, userC, userD, userE]) {
+    await db.createUserProfile(u);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Clubs
+  // ---------------------------------------------------------------------------
+  final clubAId = await db.createOrganization(
     Organization(
       id: '', // ignored; Firestore picks the ID
-      name: 'Chess Club',
-      ownerId: alex.id,
-      description: 'Casual and competitive chess for every skill level.',
-      category: 'Games',
-      tags: ['chess', 'strategy', 'beginner-friendly'],
-      contactEmail: 'chessclub@example.com',
-      socialLinks: {'instagram': 'https://instagram.com/example_chess'},
+      name: 'User A\'s Club',
+      ownerId: userA.id,
+      description: 'TEST CLUB: Open to join. Owner: User A. '
+          'Admin: User B. Member: User C.',
+      category: 'Test Category',
+      tags: ['test', 'open'],
+      contactEmail: 'usera@test.com',
+      socialLinks: {'instagram': 'https://instagram.com/test_club_a'},
       meetingInfo: {
-        'day': 'Tuesday',
+        'day': 'Monday',
         'time': '6:00 PM',
-        'location': 'Student Union 204',
+        'location': 'Test Room A',
       },
+      requiresApproval: false,
     ),
-    alex,
+    userA,
   );
-  final runClubId = await db.createOrganization(
+
+  final clubBId = await db.createOrganization(
     Organization(
       id: '',
-      name: 'Running Club',
-      ownerId: jordan.id,
-      description: 'Group runs around campus. All paces welcome.',
-      category: 'Fitness',
-      tags: ['running', 'outdoors'],
+      name: 'User B\'s Club',
+      ownerId: userB.id,
+      description: 'TEST CLUB: Requires approval to join. Owner: User B. '
+          'Member: User C (approved). Pending: User D.',
+      category: 'Test Category',
+      tags: ['test', 'approval-required'],
+      contactEmail: 'userb@test.com',
       meetingInfo: {
-        'day': 'Saturday',
-        'time': '7:30 AM',
-        'location': 'Rec Center front steps',
+        'day': 'Wednesday',
+        'time': '5:00 PM',
+        'location': 'Test Room B',
       },
+      requiresApproval: true,
     ),
-    jordan,
+    userB,
   );
 
-  // Jordan also joins Chess Club.
-  final chessClub = (await db.getOrganization(chessClubId))!;
-  await db.joinOrganization(chessClub, jordan);
+  final clubA = (await db.getOrganization(clubAId))!;
+  final clubB = (await db.getOrganization(clubBId))!;
 
-  // ---- Events --------------------------------------------------------------
+  // User A's Club: User B joins and is promoted to admin; User C joins.
+  await db.joinOrganization(clubA, userB);
+  await db.setMemberRole(clubAId, userB.id, OrgRole.admin);
+  await db.joinOrganization(clubA, userC);
+
+  // User B's Club requires approval: User C is approved, User D stays pending.
+  await db.joinOrganization(clubB, userC);
+  await db.approveMember(clubBId, userC.id);
+  await db.joinOrganization(clubB, userD);
+
+  // ---------------------------------------------------------------------------
+  // Events
+  // ---------------------------------------------------------------------------
   final now = DateTime.now();
   DateTime daysFromNow(int days, int hour) =>
       DateTime(now.year, now.month, now.day + days, hour);
 
-  final mixerId = await db.createEvent(Event(
+  final eventAId = await db.createEvent(Event(
     id: '',
-    title: 'Chess Club Welcome Mixer',
-    description: 'Meet the club, grab pizza, play a few casual games.',
-    category: 'Social',
-    tags: ['chess', 'free food'],
-    organizationId: chessClubId,
-    organizationName: 'Chess Club',
-    createdBy: alex.id,
-    hostIds: [alex.id],
+    title: 'User A\'s Event',
+    description: 'TEST EVENT: Public event for User A\'s Club. '
+        'Going: A, B, C. Interested: E.',
+    category: 'Test Category',
+    tags: ['test', 'public'],
+    organizationId: clubAId,
+    organizationName: clubA.name,
+    createdBy: userA.id,
+    hostIds: [userA.id, userB.id],
     startTime: daysFromNow(7, 18),
     endTime: daysFromNow(7, 20),
-    location: EventLocation(
-      name: 'Student Union 204',
-      address: '123 Campus Dr',
-    ),
-    capacity: 40,
+    location: EventLocation(name: 'Test Room A', address: '123 Test St'),
+    capacity: 30,
   ));
 
-  await db.createEvent(Event(
+  final eventBId = await db.createEvent(Event(
     id: '',
-    title: 'Saturday 5K Group Run',
-    description: 'Easy-pace loop around campus. Meet at the front steps.',
-    category: 'Fitness',
-    tags: ['running'],
-    organizationId: runClubId,
-    organizationName: 'Running Club',
-    createdBy: jordan.id,
-    hostIds: [jordan.id],
-    startTime: daysFromNow(3, 7),
-    endTime: daysFromNow(3, 8),
-    location: EventLocation(name: 'Rec Center front steps'),
+    title: 'User B\'s Members-Only Event',
+    description: 'TEST EVENT: Members-only event for User B\'s Club. '
+        'Going: B, C.',
+    category: 'Test Category',
+    tags: ['test', 'members-only'],
+    organizationId: clubBId,
+    organizationName: clubB.name,
+    createdBy: userB.id,
+    hostIds: [userB.id],
+    startTime: daysFromNow(5, 17),
+    endTime: daysFromNow(5, 19),
+    location: EventLocation(name: 'Test Room B'),
+    visibility: EventVisibility.membersOnly,
   ));
 
-  // An event hosted by a user without a club.
-  await db.createEvent(Event(
+  final cancelledId = await db.createEvent(Event(
     id: '',
-    title: 'Study Group: Data Structures Final',
-    description: 'Online review session. Bring questions!',
-    category: 'Academic',
-    tags: ['study'],
-    createdBy: alex.id,
-    hostIds: [alex.id],
-    startTime: daysFromNow(10, 19),
-    endTime: daysFromNow(10, 21),
+    title: 'User A\'s Cancelled Event',
+    description: 'TEST EVENT: This event was cancelled.',
+    category: 'Test Category',
+    tags: ['test', 'cancelled'],
+    organizationId: clubAId,
+    organizationName: clubA.name,
+    createdBy: userA.id,
+    hostIds: [userA.id],
+    startTime: daysFromNow(12, 18),
+    endTime: daysFromNow(12, 19),
+    location: EventLocation(name: 'Test Room A'),
+  ));
+  await db.cancelEvent(cancelledId);
+
+  final eventEId = await db.createEvent(Event(
+    id: '',
+    title: 'User E\'s Event (No Club, Virtual)',
+    description: 'TEST EVENT: Hosted by a user without a club. '
+        'Going: E. Not going: A.',
+    category: 'Test Category',
+    tags: ['test', 'virtual', 'no-club'],
+    createdBy: userE.id,
+    hostIds: [userE.id],
+    startTime: daysFromNow(9, 19),
+    endTime: daysFromNow(9, 21),
     location: EventLocation(
       name: 'Online',
       isVirtual: true,
-      meetingUrl: 'https://example.com/meeting',
+      meetingUrl: 'https://example.com/test-meeting',
     ),
   ));
 
-  // ---- RSVPs (these also add calendar entries automatically) ---------------
-  final mixer = (await db.getEvent(mixerId))!;
-  await db.rsvp(mixer, alex, RsvpStatus.going);
-  await db.rsvp(mixer, jordan, RsvpStatus.interested);
+  final pastId = await db.createEvent(Event(
+    id: '',
+    title: 'User C\'s Past Event',
+    description: 'TEST EVENT: Already happened (completed). Going: C.',
+    category: 'Test Category',
+    tags: ['test', 'past'],
+    createdBy: userC.id,
+    hostIds: [userC.id],
+    startTime: daysFromNow(-7, 15),
+    endTime: daysFromNow(-7, 16),
+    location: EventLocation(name: 'Test Room C'),
+    status: EventStatus.completed,
+  ));
 
-  // ---- A personal calendar entry --------------------------------------------
+  // ---------------------------------------------------------------------------
+  // RSVPs (these also add calendar entries automatically)
+  // ---------------------------------------------------------------------------
+  final eventA = (await db.getEvent(eventAId))!;
+  await db.rsvp(eventA, userA, RsvpStatus.going);
+  await db.rsvp(eventA, userB, RsvpStatus.going);
+  await db.rsvp(eventA, userC, RsvpStatus.going);
+  await db.rsvp(eventA, userE, RsvpStatus.interested);
+
+  final eventB = (await db.getEvent(eventBId))!;
+  await db.rsvp(eventB, userB, RsvpStatus.going);
+  await db.rsvp(eventB, userC, RsvpStatus.going);
+
+  final eventE = (await db.getEvent(eventEId))!;
+  await db.rsvp(eventE, userE, RsvpStatus.going);
+  await db.rsvp(eventE, userA, RsvpStatus.notGoing);
+
+  final pastEvent = (await db.getEvent(pastId))!;
+  await db.rsvp(pastEvent, userC, RsvpStatus.going);
+
+  // ---------------------------------------------------------------------------
+  // Personal calendar entry (not tied to any event)
+  // ---------------------------------------------------------------------------
   await db.addPersonalCalendarEntry(
-    jordan.id,
+    userC.id,
     CalendarEntry(
       id: '',
-      title: 'Bio lab report due',
-      startTime: daysFromNow(5, 23),
-      endTime: daysFromNow(5, 23),
+      title: 'User C\'s Personal Reminder',
+      startTime: daysFromNow(3, 12),
+      endTime: daysFromNow(3, 13),
       type: CalendarEntryType.personal,
-      reminderMinutesBefore: 120,
-      color: '#E24A4A',
+      reminderMinutesBefore: 30,
+      color: '#4A90E2',
     ),
   );
 }

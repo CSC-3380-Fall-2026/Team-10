@@ -178,6 +178,36 @@ For RSVP entries, the entry ID equals the event ID.
 | status | string | `going` / `interested` / `notGoing` |
 | rsvpAt | timestamp | |
 
+## Test data (from `lib/dev/seed_data.dart`)
+
+Everything is labeled so it's obvious what it's for when testing.
+
+| Test user | Document ID | Permissions it tests |
+|---|---|---|
+| User A | `test_user_a` | Owner of User A's Club |
+| User B | `test_user_b` | Owner of User B's Club; **admin** in User A's Club |
+| User C | `test_user_c` | Regular member of both clubs (approved into User B's Club) |
+| User D | `test_user_d` | **Pending** member of User B's Club |
+| User E | `test_user_e` | In no clubs; hosts their own event |
+
+| Club | Joining | Members | memberCount |
+|---|---|---|---|
+| User A's Club | Open | A (owner), B (admin), C (member) | 3 |
+| User B's Club | Requires approval | B (owner), C (member), D (pending) | 2 (pending not counted) |
+
+| Event | Type | RSVPs | attendeeCount |
+|---|---|---|---|
+| User A's Event | Public, User A's Club | A, B, C going; E interested | 3 |
+| User B's Members-Only Event | Members only, User B's Club | B, C going | 2 |
+| User A's Cancelled Event | Cancelled | none | 0 |
+| User E's Event (No Club, Virtual) | No club, online | E going; A not going | 1 |
+| User C's Past Event | Completed, last week | C going | 1 |
+
+Calendars: A has 1 entry, B has 2, C has 4 (including a personal reminder),
+D has 0, E has 2.
+
+Test users are profile documents only, not login accounts.
+
 ## Things to know
 
 - **Copied fields.** `organizationName` and `orgName` are copies. If a club is

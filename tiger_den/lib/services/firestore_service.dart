@@ -160,7 +160,8 @@ class FirestoreService {
         'joinedAt': FieldValue.serverTimestamp(),
       });
       tx.set(_userMemberships(user.id).doc(org.id), {
-        ...Membership(orgId: org.id, orgName: org.name).toMap(),
+        ...Membership(orgId: org.id, orgName: org.name, status: status)
+            .toMap(),
         'joinedAt': FieldValue.serverTimestamp(),
       });
       if (status == MemberStatus.active) {
@@ -184,6 +185,38 @@ class FirestoreService {
         tx.update(_orgs.doc(orgId), {'memberCount': FieldValue.increment(-1)});
       }
     });
+  }
+
+  /// Approves a pending join request (for clubs with requiresApproval).
+  Future<void> approveMember(String orgId, String uid) async {
+    final memberRef = _orgMembers(orgId).doc(uid);
+
+    await _db.runTransaction((tx) async {
+      final existing = await tx.get(memberRef);
+      if (!existing.exists) return;
+      if (existing.data()?['status'] != MemberStatus.pending.name) return;
+
+      tx.update(memberRef, {'status': MemberStatus.active.name});
+      tx.update(_userMemberships(uid).doc(orgId),
+          {'status': MemberStatus.active.name});
+      tx.update(_orgs.doc(orgId), {'memberCount': FieldValue.increment(1)});
+    });
+  }
+
+  /// Changes a member's role, e.g. promoting someone to admin.
+  /// Keeps the club's adminIds list in sync so it can be used for
+  /// permission checks ("can this user edit this club?").
+  Future<void> setMemberRole(String orgId, String uid, OrgRole role) async {
+    final batch = _db.batch();
+    batch.update(_orgMembers(orgId).doc(uid), {'role': role.name});
+    batch.update(_userMemberships(uid).doc(orgId), {'role': role.name});
+    batch.update(_orgs.doc(orgId), {
+      'adminIds': role == OrgRole.member
+          ? FieldValue.arrayRemove([uid])
+          : FieldValue.arrayUnion([uid]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await batch.commit();
   }
 
   /// Everyone in a club, for a members list screen.

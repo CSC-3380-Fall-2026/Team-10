@@ -135,12 +135,16 @@ class Membership {
   final String orgId;
   final String orgName;
   final OrgRole role;
+
+  /// 'pending' while waiting for a club admin to approve the join request.
+  final MemberStatus status;
   final DateTime? joinedAt;
 
   Membership({
     required this.orgId,
     required this.orgName,
     this.role = OrgRole.member,
+    this.status = MemberStatus.active,
     this.joinedAt,
   });
 
@@ -150,6 +154,7 @@ class Membership {
       orgId: doc.id,
       orgName: d['orgName'] ?? '',
       role: enumFrom(OrgRole.values, d['role'], OrgRole.member),
+      status: enumFrom(MemberStatus.values, d['status'], MemberStatus.active),
       joinedAt: dateFrom(d['joinedAt']),
     );
   }
@@ -157,5 +162,6 @@ class Membership {
   Map<String, dynamic> toMap() => {
         'orgName': orgName,
         'role': role.name,
+        'status': status.name,
       };
 }
