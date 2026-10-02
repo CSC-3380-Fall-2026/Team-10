@@ -63,7 +63,7 @@ class EventCreationFormState extends State<EventCreationForm> {
             },
           ), 
 
-          GestureDetector(
+          GestureDetector( //ImageGetter
             onTap: () async {await _pickImageFromGalleryandDisplay();}, //display prolly not gonna work but test
             child: Container(
                 height: 100,
@@ -131,9 +131,54 @@ class EventCreationFormState extends State<EventCreationForm> {
               ),
             ],
           ),
-          TextFormField( //
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField( //Start Time
+                  decoration: const InputDecoration(
+                    labelText: 'Start Time',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'You must fill this section out';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+
+              Expanded(
+                child: TextFormField( //End Time
+                  decoration: const InputDecoration(
+                    labelText: 'End Time',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'You must fill this section out';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+          TextFormField( //Capacity
             decoration: const InputDecoration(
-              labelText: 'Location',
+              labelText: 'Max Capacity',
+              border: OutlineInputBorder(),
+              ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'You must fill this section out';
+              }
+              return null;
+            },
+          ), 
+          TextFormField( //Tags
+            decoration: const InputDecoration(
+              labelText: 'Tags',
               border: OutlineInputBorder(),
               ),
             validator: (value) {
@@ -161,8 +206,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   }
 }
 
+//isVirtual checkbox
+//dropdowns:  and meeting url that pops out
 
-//dropdowns: isVirtual and meeting url that pops out
 //if not all day, then start time and end time pop up
-//image input
 //category drop down that changes betwen 1 and 2 options
+
+//easy add: tags, startTime and Endtime, Max Capacity
+
+
+//time spent so far is 4h
