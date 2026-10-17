@@ -5,7 +5,7 @@ import 'base_designs/sitewide/design_main.dart';
 import 'firebase_options.dart';
 import '/pages/widgets/event_creation_ui.dart';
 import 'pages/widgets/login_page.dart';
-import 'services/image_test.dart';
+import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
@@ -14,7 +14,11 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Warning: Could not load .env file: $e");
+  }
 
   // runLoginPage();
   // runImageTest(); 
@@ -49,7 +53,7 @@ void runEventCreationForm(){
   );
 }
 
-void runImageTest() {
+/* void runImageTest() {
   runApp(
     const MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -60,5 +64,5 @@ void runImageTest() {
       ),
     ),
   );
-}
+} */
   

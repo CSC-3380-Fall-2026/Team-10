@@ -79,6 +79,7 @@ class ImageService {
           return null;}
       } catch (e) {
         print('Upload failed: $e');
+        return null;
       }
   }
 }
