@@ -218,3 +218,52 @@ Test users are profile documents only, not login accounts.
   directly, so this stays consistent.
 - **Sample users can't log in.** Accounts made by the seed script are profiles
   only. Real accounts come from `AuthService.signUp`.
+
+## Login sessions
+
+Login is handled by **Firebase Authentication**. When a user logs in, Firebase
+creates a session for that device and saves it, so the user stays logged in
+after closing and reopening the app, until they log out. Each device has its
+own session, so different users on different phones are fully separate.
+
+`lib/services/session_service.dart` keeps track of the active session:
+
+```dart
+final session = SessionService.instance;
+
+session.isLoggedIn;            // true / false
+session.currentUid;            // logged-in user's ID (same as users/{uid}), or null
+session.session?.sessionId;    // unique ID for this session
+await session.logIn(email, password);
+await session.logOut();
+
+// Rebuild a widget whenever someone logs in or out:
+ListenableBuilder(
+  listenable: SessionService.instance,
+  builder: (context, _) => Text(SessionService.instance.currentUid ?? 'Logged out'),
+);
+```
+
+`session.isReady` is false for a moment at startup while Firebase checks for a
+saved login. Show a loading spinner until it's true.
+
+### Testing sessions without the login screen
+
+Two dummy login accounts exist in Firebase Authentication (listed in
+`lib/dev/test_accounts.dart`):
+
+| Account | Email | Password |
+|---|---|---|
+| Test User 1 | testuser1@tigerden.dev | TigerDenTest1! |
+| Test User 2 | testuser2@tigerden.dev | TigerDenTest2! |
+
+These are test-only. The repository is public, so never reuse them.
+
+Run the session test page instead of the normal app (from `tiger_den`):
+
+```
+flutter run -t lib/dev/session_test_main.dart -d emulator-5554
+```
+
+It shows who's logged in, their user ID, and the session ID, with buttons to
+log in as either test user or log out. `main.dart` is not affected.
