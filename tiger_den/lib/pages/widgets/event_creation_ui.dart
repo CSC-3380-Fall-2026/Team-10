@@ -8,7 +8,7 @@ import '../../models/organization.dart';
 import '../../services/firestore_service.dart';
 import '../../services/image_service.dart';
 
-/// A form for creating an event
+///A form for creating an event
 class EventCreationForm extends StatefulWidget {
   final String currentUserId;
   const EventCreationForm({
@@ -22,62 +22,64 @@ class EventCreationForm extends StatefulWidget {
   }
 }
 
-/// Stores the state and form data for EventCreationForm
+///Stores the state and form data for EventCreationForm
 class EventCreationFormState extends State<EventCreationForm> {
-  /// The key used to validate this form
+  ///The key used to validate this form
   final eventFormKey = GlobalKey<FormState>();
   ///The service used for image compression and modification
   ImageService imageService = ImageService();
-  /// The service used to communicate with Cloud Firestore
+  ///The service used to communicate with Cloud Firestore
   FirestoreService firestoreService = FirestoreService();
-  /// The currently signed-in user's profile
+  ///The currently signed-in user's profile
   AppUser? currentUser;
 
-  /// The controller for the event title field
+  ///The controller for the event title field
   TextEditingController titleController = TextEditingController();
-  /// The controller for the event description field
+  ///The controller for the event description field
   TextEditingController descriptionController = TextEditingController();
-  /// The controller for the event address field
+  ///The controller for the event address field
   TextEditingController addressController = TextEditingController();
-  /// The controller for the event capacity field
+  ///The controller for the event capacity field
   TextEditingController capacityController = TextEditingController();
-  /// The controller for the virtual meeting link field
+  ///The controller for the virtual meeting link field
   TextEditingController meetingLinkController = TextEditingController();
-  /// The controller for the event tags dropdown
+  ///The controller for the event tags dropdown
   MultiSelectController<String> multiSelectController = MultiSelectController<String>();
   
-  /// Whether the event is virtual
+  ///Whether the event is virtual
   bool virtualChecked = false;
-  /// Whether the event lasts all day
+  ///Whether the event lasts all day
   bool allDayChecked = false; 
-  /// Whether the event is associated with an organization
+  ///Whether the event is associated with an organization
   bool forOrganization = false;
 
-  /// The selected starting date for the event
+  ///The selected starting date for the event
   DateTime? selectedStartDate;
-  /// The selected ending date for the event
+  ///The selected ending date for the event
   DateTime? selectedEndDate;
-  /// The selected starting time for the event
+  ///The selected starting time for the event
   TimeOfDay? selectedStartTime;
-  /// The selected ending time for the event
+  ///The selected ending time for the event
   TimeOfDay? selectedEndTime;
 
-  /// The selected organization name
+  ///The selected organization name
   String? selectedClub;
-  /// The selected event category
+  ///The selected event category
   String? selectedCategory;
-  /// The organizations managed by the current user
+  ///The organizations managed by the current user
   List<String> orgList = []; 
-  /// The current user's organization memberships
+  ///The current user's organization memberships
   List<Membership> userMemberships = [];
-  /// The tags selected for this event
+  ///The tags selected for this event
   List<String> selectedTags = [];
   
-  /// The image selected for the event
+  ///The image selected for the event
   XFile? selectedImage;
-  /// The image picker used to select an event image
+  ///The image URL from the selected image
+  String? selectedImageUrl;
+  ///The image picker used to select an event image
   ImagePicker picker = ImagePicker();
-  /// Selects an image from the device gallery and displays it
+  ///Selects an image from the device gallery, compresses it, renames it, and displays it
   Future<void> pickImageFromGalleryAndDisplay() async {
     XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image == null) {return;}
@@ -93,7 +95,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Compressed size: $fileLength bytes. File too large to upload.'),
-              duration: const Duration(seconds: 2),
+              duration: Duration(seconds: 2),
               ),
           );
         }
@@ -101,14 +103,14 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
   }
 
-  /// Displays the selected picture on the screen
+  ///Displays the selected picture on the screen
   Widget displayPicture() {
     return selectedImage == null
         ? Text('No image selected.')
         : Image.file(File(selectedImage!.path));
   }
 
-  /// Returns whether the current user is an officer or owner of an organization
+  ///Returns whether the current user is an officer or owner of an organization
   bool isAdmin(){
     for (final m in userMemberships) {
       if (m.role == OrgRole.owner || m.role == OrgRole.admin) {
@@ -118,7 +120,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     return false;
   }
 
-  /// Retrieves the list of organizations the current user manages
+  ///Retrieves the list of organizations the current user manages
   List<String> retrieveAdminClubs(){
     List<String> adminClubs = [];
     for (final m in userMemberships) {
@@ -129,9 +131,9 @@ class EventCreationFormState extends State<EventCreationForm> {
     return adminClubs;
   }
 
-  /// Changes the checkbox color based on the current widget state
+  ///Changes the checkbox color based on the current widget state
   Color checkBoxGetColor(Set<WidgetState> states) {
-    const Set<WidgetState> interactiveStates = <WidgetState>{
+    Set<WidgetState> interactiveStates = <WidgetState>{
       WidgetState.pressed,
       WidgetState.hovered,
       WidgetState.focused,
@@ -142,7 +144,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     return Colors.red;
   }
 
-  /// Loads the initial user profile and organization memberships from the database
+  ///Loads the initial user profile and organization memberships from the database
   Future<void> loadInitialData() async {
     try {
       final user = await firestoreService.getUser(widget.currentUserId);
@@ -163,19 +165,19 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
   }
 
-  /// Initializes and fetches starting data
+  ///Initializes and fetches starting data
   @override
   void initState() {
     super.initState();
     loadInitialData();
   }
 
-  /// Validates the input fields and uploads the new event to Firestore
+  ///Validates the input fields and uploads the new event to Firestore
   Future<void> submitForm() async {
     if (!eventFormKey.currentState!.validate()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Form validation failed')),
+          SnackBar(content: Text('Form validation failed')),
         );
       }
       return;
@@ -183,7 +185,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     if (currentUser == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User profile not loaded yet. Please wait.')),
+          SnackBar(content: Text('User profile not loaded yet. Please wait.')),
         );
       }
       return;
@@ -238,6 +240,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         ),
         capacity: int.tryParse(capacityController.text.trim()),
         tags: selectedTags,
+        imageUrl: selectedImageUrl,
         visibility: EventVisibility.public,
         status: EventStatus.scheduled,
       );
@@ -256,7 +259,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
   }
 
-  /// Disposes text and dropdown controllers when finished
+  ///Disposes text and dropdown controllers when finished
   @override
   void dispose() { 
     titleController.dispose();
@@ -269,11 +272,11 @@ class EventCreationFormState extends State<EventCreationForm> {
     super.dispose();
   }
 
-  /// Builds the text field for the event title
+  ///Builds the text field for the event title
   Widget buildTitleField() {
     return TextFormField(
       controller: titleController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Event Title',
         border: UnderlineInputBorder(),
       ),
@@ -286,7 +289,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the image selection field
+  ///Builds the image selection field
   Widget buildImageGetter() {
     return GestureDetector(
       onTap: () async { await pickImageFromGalleryAndDisplay(); },
@@ -299,11 +302,11 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the text field for the event description
+  ///Builds the text field for the event description
   Widget buildDescriptionField() {
     return TextFormField(
       controller: descriptionController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Event Description',
         border: UnderlineInputBorder(),
       ),
@@ -316,11 +319,11 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the text field for the event address
+  ///Builds the text field for the event address
   Widget buildAddressField() {
     return TextFormField(
       controller: addressController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Event Address',
         border: OutlineInputBorder(),
       ),
@@ -333,7 +336,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the start date picker field
+  ///Builds the start date picker field
   Widget buildStartDatePicker() {
     return FormField<DateTime>(
       validator: (value) {
@@ -370,7 +373,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the end date picker field
+  ///Builds the end date picker field
   Widget buildEndDatePicker() {
     return FormField<DateTime>(
       validator: (value) {
@@ -407,7 +410,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the row containing both start and end date pickers
+  ///Builds the row containing both start and end date pickers
   Widget buildDateRow() {
     return Row(
       children: [
@@ -421,7 +424,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the checkbox specifying whether the event is an all-day event
+  ///Builds the checkbox specifying whether the event is an all-day event
   Widget buildAllDayCheckbox() {
     return Checkbox(
       checkColor: Colors.white,
@@ -435,7 +438,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the start time picker field
+  ///Builds the start time picker field
   Widget buildStartTimePicker() {
     return FormField<TimeOfDay>(
       validator: (value) {
@@ -471,7 +474,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the end time picker field
+  ///Builds the end time picker field
   Widget buildEndTimePicker() {
     return FormField<TimeOfDay>(
       validator: (value) {
@@ -506,7 +509,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the row containing the start and end time pickers when not an all-day event
+  ///Builds the row containing the start and end time pickers when not an all-day event
   Widget buildTimeRow() {
     if (allDayChecked) {
       return SizedBox.shrink();
@@ -523,12 +526,12 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the text field for maximum attendee capacity
+  ///Builds the text field for maximum attendee capacity
   Widget buildCapacityField() {
     return TextFormField(
       controller: capacityController,
       keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Max Capacity',
         border: OutlineInputBorder(),
       ),
@@ -544,7 +547,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the virtual event checkbox and the conditional meeting link input field
+  ///Builds the virtual event checkbox and the conditional meeting link input field
   Widget buildVirtualRow() {
     return Row(
       children: [
@@ -581,7 +584,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the dropdown to toggle between official organization events and other events
+  ///Builds the dropdown to toggle between official organization events and other events
   Widget buildEventTypeDropdown() {
     if (!isAdmin()) {
       return SizedBox.shrink();
@@ -602,7 +605,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           });
         }
       },
-      dropdownMenuEntries: const [
+      dropdownMenuEntries: [
         DropdownMenuEntry<String>(
           value: 'official',
           label: 'Event for Official Organization or Club',
@@ -615,7 +618,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the dropdown allowing selection among the organizations the user manages
+  ///Builds the dropdown allowing selection among the organizations the user manages
   Widget buildClubDropdown() {
     if (!forOrganization) {
       return SizedBox.shrink();
@@ -640,7 +643,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the multi-select dropdown for tags
+  ///Builds the multi-select dropdown for tags
   Widget buildTagsDropdown() {
     return MultiDropdown<String>(
       controller: multiSelectController,
@@ -663,7 +666,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  /// Builds the form 
+  ///Builds the form 
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -684,8 +687,12 @@ class EventCreationFormState extends State<EventCreationForm> {
             buildClubDropdown(),
             buildTagsDropdown(),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (eventFormKey.currentState!.validate()) {
+                  selectedImageUrl = await imageService.uploadImageToImgbb(selectedImage);
+                  if (selectedImageUrl == null){
+                    print("ImageURL is null");
+                  }
                   submitForm();
                 }
               },
