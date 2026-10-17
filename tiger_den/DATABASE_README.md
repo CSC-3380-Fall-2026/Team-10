@@ -267,3 +267,35 @@ flutter run -t lib/dev/session_test_main.dart -d emulator-5554
 
 It shows who's logged in, their user ID, and the session ID, with buttons to
 log in as either test user or log out. `main.dart` is not affected.
+
+
+
+## Loading the logged-in user's profile
+
+`lib/services/current_user_service.dart` loads the logged-in user's profile
+(`users/{uid}`) into the session. When someone logs in, it takes their user ID
+from `SessionService` and loads their profile. When they log out, it clears it.
+The profile stays live, so changes in the database show up automatically.
+
+```dart
+final me = CurrentUserService.instance;
+
+me.user?.displayName;   // logged-in user's profile (AppUser), or null
+me.isLoading;           // true while the profile is loading
+me.isMissingProfile;    // logged in, but no users/{uid} document exists
+
+// Rebuild a widget when the profile loads or changes:
+ListenableBuilder(
+  listenable: CurrentUserService.instance,
+  builder: (context, _) =>
+      Text(CurrentUserService.instance.user?.displayName ?? 'Guest'),
+);
+```
+
+Only one database listener is open at a time (for the logged-in user), so
+using it from many screens doesn't cause extra reads.
+
+The 2 test login accounts have matching profiles in `users/` (display names
+"Test User 1" and "Test User 2"). On the session test page, logging in shows
+both the session and the loaded profile. If an account has no profile yet,
+the page offers a "Create test profile" button.
