@@ -1,12 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:model2vec/model2vec.dart';
+// import 'package:model2vec/model2vec.dart';
 import 'base_designs/sitewide/design_main.dart';
 import 'firebase_options.dart';
 import '/pages/widgets/event_creation_ui.dart';
 import 'pages/widgets/login_page.dart';
 import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'search_service_test.dart';
 
 
 void main() async {
@@ -20,10 +21,13 @@ void main() async {
   } catch (e) {
     debugPrint("Warning: Could not load .env file: $e");
   }
-  Model2Vec.loadModel('minishlab/potion-base-2M');
+
+  runApp(SearchTestButton());
+ 
   // runLoginPage();
   // runImageTest(); 
-  runEventCreationForm();
+  // runEventCreationForm();
+
 }
 
 //run app for login and signup page

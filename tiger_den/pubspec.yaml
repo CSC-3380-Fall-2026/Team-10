@@ -19,7 +19,8 @@ dependencies:
   path_provider: ^2.1.6
   http: ^1.2.2
   path: ^1.9.0
-  model2vec: ^2.0.3
+ 
+  algolia_client_search: ^1.54.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
