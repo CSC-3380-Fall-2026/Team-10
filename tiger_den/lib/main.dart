@@ -1,28 +1,33 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
+// import 'package:model2vec/model2vec.dart';
 import 'base_designs/sitewide/design_main.dart';
 import 'firebase_options.dart';
 import '/pages/widgets/event_creation_ui.dart';
 import 'pages/widgets/login_page.dart';
 import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'search_service_test.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  options: DefaultFirebaseOptions.currentPlatform,
   );
   
   try {
-    await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint("Warning: Could not load .env file: $e");
   }
 
+  runApp(SearchTestButton());
+ 
   // runLoginPage();
   // runImageTest(); 
-  runEventCreationForm();
+  // runEventCreationForm();
+
 }
 
 //run app for login and signup page
@@ -53,16 +58,5 @@ void runEventCreationForm(){
   );
 }
 
-/* void runImageTest() {
-  runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: SafeArea(
-          child: ImageTestForm(),
-        ),
-      ),
-    ),
-  );
-} */
+
   

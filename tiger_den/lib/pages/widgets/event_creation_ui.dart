@@ -7,6 +7,7 @@ import '../../models/event.dart';
 import '../../models/organization.dart';
 import '../../services/firestore_service.dart';
 import '../../services/image_service.dart';
+import '../../services/search_service.dart';
 
 ///A form for creating an event
 class EventCreationForm extends StatefulWidget {
@@ -30,6 +31,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   ImageService imageService = ImageService();
   ///The service used to communicate with Cloud Firestore
   FirestoreService firestoreService = FirestoreService();
+  ///The service used to upload the event to the search function
+  SearchService searchService = SearchService();
   ///The currently signed-in user's profile
   AppUser? currentUser;
 
@@ -52,6 +55,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   bool allDayChecked = false; 
   ///Whether the event is associated with an organization
   bool forOrganization = false;
+  ///Id for search index of event uploaded
+  String searchIndexId = "";
 
   ///The selected starting date for the event
   DateTime? selectedStartDate;
@@ -244,22 +249,28 @@ class EventCreationFormState extends State<EventCreationForm> {
         visibility: EventVisibility.public,
         status: EventStatus.scheduled,
       );
-      await firestoreService.createEvent(newEvent);
+      
+      
+
+      String fireUpload = await firestoreService.createEvent(newEvent);
+      String indexId = await searchService.createIndex(titleController.text.trim(), descriptionController.text.trim(), fireUpload); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Event Created Successfully!')),
         );
-      }
+      } 
     } catch (e) { 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Event Not Created: Error creating event: $e')),
         );
       }
+      searchService.deleteIndex(searchIndexId);
     }
   }
 
   ///Disposes text and dropdown controllers when finished
+  ///implemented when exiting page
   @override
   void dispose() { 
     titleController.dispose();
@@ -308,7 +319,7 @@ class EventCreationFormState extends State<EventCreationForm> {
       controller: descriptionController,
       decoration: InputDecoration(
         labelText: 'Event Description',
-        border: UnderlineInputBorder(),
+        border: UnderlineInputBorder(),  
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {

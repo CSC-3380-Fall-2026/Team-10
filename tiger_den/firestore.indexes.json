@@ -1,0 +1,17 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "clubs_events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "searchVector",
+          "vectorConfig": {
+            "dimension": 128,
+            "flat": {}
+          }
+        }
+      ]
+    }
+  ]
+}
