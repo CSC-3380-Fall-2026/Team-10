@@ -32,25 +32,28 @@ class SearchService {
     client = SearchClient(appId: appIdKey!, apiKey: writeKey!);
     return client; 
   }
-  
-  Future<String> createIndex(String title, String description, String id) async {
+  ///
+  Future<String> createIndex(String type, String title, String description, String id, List<String>tags, String category) async {
     try {
       await client!.saveObject(
         indexName: 'project_SEARCH',
         body: {
+          'type': type,
           'objectID': id, 
           'title': title,
           'description': description,
+          'tags': tags,
+          'category': category,
         },
       );
       print("Successfully indexed to Algolia via SearchClient!");
   } catch (e) {
     print("Algolia indexing failed: $e");
+    return "";
   }
     return id;
   }
-
-
+///Deletes database object for searching
   Future<void> deleteIndex(String indexId) async {
     if(indexId == ""){
       return; 
@@ -66,9 +69,6 @@ class SearchService {
       print("Delete failed: $e");
     }
   }
+
 }
-
-
-
-
-
+///

@@ -53,8 +53,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   bool virtualChecked = false;
   ///Whether the event lasts all day
   bool allDayChecked = false; 
-  ///Whether the event is associated with an organization
-  bool forOrganization = false;
+  ///Whether the event is associated with an official club/organization or a casual, unrecognized one
+  String category = "casual";
   ///Id for search index of event uploaded
   String searchIndexId = "";
 
@@ -135,6 +135,8 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
     return adminClubs;
   }
+
+  
 
   ///Changes the checkbox color based on the current widget state
   Color checkBoxGetColor(Set<WidgetState> states) {
@@ -219,7 +221,7 @@ class EventCreationFormState extends State<EventCreationForm> {
       );
 
       String? targetOrgId;
-      if (forOrganization && selectedClub != null) {
+      if (category == "official" && selectedClub != null) {
           var match = userMemberships.first; 
           for (final m in userMemberships) {
             if (m.orgName == selectedClub) {
@@ -235,6 +237,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         createdBy: currentUser!.id,
         title: titleController.text.trim(),
         description: descriptionController.text.trim(),
+        category: category,
         startTime: startDateTime,
         endTime: endDateTime,
         allDay: allDayChecked,
@@ -250,10 +253,16 @@ class EventCreationFormState extends State<EventCreationForm> {
         status: EventStatus.scheduled,
       );
       
+      String fireUploadID = await firestoreService.createEvent(newEvent);
+      String indexId = await searchService.createIndex(
+      "event", 
+      titleController.text.trim(),
+      descriptionController.text.trim(), 
+      fireUploadID, 
+      selectedTags, 
+      category); 
+      searchIndexId = indexId;
       
-
-      String fireUpload = await firestoreService.createEvent(newEvent);
-      String indexId = await searchService.createIndex(titleController.text.trim(), descriptionController.text.trim(), fireUpload); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Event Created Successfully!')),
@@ -609,9 +618,9 @@ class EventCreationFormState extends State<EventCreationForm> {
           setState(() {
             selectedCategory = value;
             if(value == 'official'){
-              forOrganization = true;
+              category = "official";
             } else {
-              forOrganization = false;
+              category = "casual";
             }
           });
         }
@@ -631,7 +640,7 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Builds the dropdown allowing selection among the organizations the user manages
   Widget buildClubDropdown() {
-    if (!forOrganization) {
+    if (category == "casual") {
       return SizedBox.shrink();
     }
     return DropdownMenu<String>(
