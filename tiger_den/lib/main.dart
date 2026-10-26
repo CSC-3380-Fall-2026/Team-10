@@ -7,7 +7,7 @@ import '/pages/widgets/event_creation_ui.dart';
 import 'pages/widgets/login_page.dart';
 import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'search_service_test.dart';
+import 'tests/search_service_test.dart';
 
 
 void main() async {
@@ -22,11 +22,11 @@ void main() async {
     debugPrint("Warning: Could not load .env file: $e");
   }
 
-  runApp(SearchTestButton());
+  // runApp(SearchTestButton());
  
   // runLoginPage();
   // runImageTest(); 
-  // runEventCreationForm();
+  runEventCreationForm();
 
 }
 

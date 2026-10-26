@@ -20,7 +20,7 @@ class ImageService {
 
   ///Compresses image file and gives it a unique time based name
   Future<XFile?> compressFile(XFile? file) async {
-    makeImageFolder();
+    await makeImageFolder();
     String fileName = p.basename(file!.path);
     String targetPath = p.join(imageDir.path, "compressed_${fileName}_${DateTime.now().millisecondsSinceEpoch}.jpg".trim());
     XFile? result = await FlutterImageCompress.compressAndGetFile(
