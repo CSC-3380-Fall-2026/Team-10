@@ -35,6 +35,7 @@ class SearchService {
     return client; 
   }
   ///Creates and index for searching. Neccessary for every time an event or club is added. type refers to event vs club, category is official vs unofficial 
+  ///When u want to edit an index, use this. 
   Future<String> createIndex(String type, String title, String description, String id, List<String>tags, String category) async {
     try {
       getSearchClient("write");
