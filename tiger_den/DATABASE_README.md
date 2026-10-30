@@ -299,3 +299,39 @@ The 2 test login accounts have matching profiles in `users/` (display names
 "Test User 1" and "Test User 2"). On the session test page, logging in shows
 both the session and the loaded profile. If an account has no profile yet,
 the page offers a "Create test profile" button.
+
+
+## Password reset
+
+`AuthService.sendPasswordReset(email)` emails the user a link to reset their
+password. Firebase sends the email, the user picks a new password on Firebase's
+reset page, and Firebase updates the stored (hashed) password itself.
+Passwords never pass through our code or Firestore.
+
+If it fails, it throws a `PasswordResetException` whose `message` is safe to
+show the user (e.g. "Too many attempts. Please wait a few minutes and try
+again."):
+
+```dart
+try {
+  await AuthService().sendPasswordReset(email);
+  // "If an account exists for this email, a reset link was sent."
+} on PasswordResetException catch (e) {
+  // show e.message
+}
+```
+
+For privacy, Firebase doesn't reveal whether an account exists for an email,
+so an unknown email still "succeeds" (no email is sent). Word the success
+message as "If an account exists...".
+
+The login page's "Forgot Password?" dialog already uses this.
+
+**Testing:** `flutter run -t lib/dev/password_reset_test_main.dart -d emulator-5554`
+sends a reset email and then checks that the new password logs in. Use an
+account with a real inbox (the `@tigerden.dev` test accounts can't receive
+email). The email comes from `noreply@...firebaseapp.com`, so check spam.
+
+**Email template:** Firebase currently blocks editing the email templates for
+this project ("Email template updates are currently unavailable"), so the
+default reset email is used.
