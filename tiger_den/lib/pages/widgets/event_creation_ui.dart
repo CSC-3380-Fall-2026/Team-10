@@ -8,6 +8,7 @@ import '../../models/organization.dart';
 import '../../services/firestore_service.dart';
 import '../../services/image_service.dart';
 import '../../services/search_service.dart';
+import '../../services/tag_service.dart';
 
 ///A form for creating an event
 class EventCreationForm extends StatefulWidget {
@@ -33,6 +34,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   FirestoreService firestoreService = FirestoreService();
   ///The service used to upload the event to the search function
   SearchService searchService = SearchService();
+  //Used to get tags
+  TagService tagService = TagService();
   ///The currently signed-in user's profile
   AppUser? currentUser;
 
@@ -670,14 +673,9 @@ class EventCreationFormState extends State<EventCreationForm> {
       fieldDecoration: FieldDecoration(
         hintText: 'Select Tags',
       ),
-      items: [
-        DropdownItem(label: 'sport', value: 'sport'),
-        DropdownItem(label: 'game', value: 'game'),
-        DropdownItem(label: 'cultural', value: 'cultural'),
-        DropdownItem(label: 'academic', value: 'academic'),
-        DropdownItem(label: 'political', value: 'political'),
-        DropdownItem(label: 'student government', value: 'student government'),
-      ],
+      items: tagService.fetchTags().map((item) => DropdownItem(
+        label: item, 
+        value: item,)).toList(),
       onSelectionChange: (List<String> selectedItems) {
         setState(() {
           selectedTags = selectedItems;
