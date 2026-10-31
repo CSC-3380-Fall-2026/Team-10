@@ -8,6 +8,7 @@ import 'pages/widgets/login_page.dart';
 import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import '../test/search_service_test.dart';
+import 'pages/widgets/home_page.dart';
 
 
 void main() async {
@@ -26,7 +27,8 @@ void main() async {
  
   // runLoginPage();
   // runImageTest(); 
-  runEventCreationForm();
+  // runEventCreationForm();
+  runHomePage();
 
 }
 
@@ -58,5 +60,16 @@ void runEventCreationForm(){
   );
 }
 
-
+void runHomePage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: const HomePage(),
+    ),
+  );
+}
   
