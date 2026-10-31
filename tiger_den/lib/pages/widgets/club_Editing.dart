@@ -3,7 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/organization.dart';
 import '../../services/firestore_service.dart';
 import '../../services/image_service.dart';
- 
+import '../../services/search_service.dart';
+
 class ClubEditForm extends StatefulWidget {
   final String orgId;
   final String currentUserId;
@@ -200,7 +201,20 @@ class ClubEditFormState extends State<ClubEditForm> {
         if (newLogoUrl != null) 'logoUrl': newLogoUrl,
         if (newBannerUrl != null) 'bannerUrl': newBannerUrl,
       };
+      // Saves to the club's existing document (same ID, no copies). If the
+      // name changed, its events and members' club lists get the new name too.
       await firestoreService.updateOrganization(widget.orgId, changes);
+      await updateSearchIndex(changes);
+
+      // Refresh so the page shows what's now saved (e.g. the new logo URL).
+      final saved = await firestoreService.getOrganization(widget.orgId);
+      if (mounted) {
+        setState(() {
+          organization = saved ?? organization;
+          selectedLogo = null;
+          selectedBanner = null;
+        });
+      }
       showMessage('Club Updated Successfully!');
     } catch (e) {
       showMessage('Club Not Updated: Error saving club: $e');
@@ -213,6 +227,25 @@ class ClubEditFormState extends State<ClubEditForm> {
     }
   }
  
+  /// Updates the club's search entry so search shows the new name,
+  /// description and tags. Uses the club's ID, so it overwrites the old
+  /// entry instead of adding a second one. If search isn't set up (e.g. no
+  /// Algolia keys in .env), the club is still saved and this is skipped.
+  Future<void> updateSearchIndex(Map<String, dynamic> changes) async {
+    try {
+      await SearchService().createIndex(
+        'club',
+        changes['name'] as String,
+        changes['description'] as String,
+        widget.orgId,
+        List<String>.from(changes['tags'] as List),
+        'official',
+      );
+    } catch (e) {
+      debugPrint('Club saved, but the search index was not updated: $e');
+    }
+  }
+
   @override
   void dispose() {
     nameController.dispose();
