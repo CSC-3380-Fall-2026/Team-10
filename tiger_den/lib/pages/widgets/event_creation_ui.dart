@@ -344,6 +344,7 @@ class EventCreationFormState extends State<EventCreationForm> {
   Widget buildAddressField() {
     return TextFormField(
       controller: addressController,
+      keyboardType: TextInputType.streetAddress,
       decoration: InputDecoration(
         labelText: 'Event Address',
         border: OutlineInputBorder(),

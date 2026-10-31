@@ -95,6 +95,10 @@ class AuthService {
   }
 
   static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  ///Gets _emailPattern for other classes to access
+  RegExp getEmailPattern(){
+    return _emailPattern;
+  }
 
   static String _friendlyResetMessage(String code) {
     switch (code) {

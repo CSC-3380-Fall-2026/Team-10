@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../services/auth_service.dart';
 import '../../base_designs/sitewide/design_main.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -25,16 +25,19 @@ class ForgotPasswordPage extends StatefulWidget {
 class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   /// The key used to validate this form
   final formKey = GlobalKey<FormState>();
+  ///auth_service for password reset logic
+  AuthService authService = AuthService();
+  /// The controller for the email field
+  TextEditingController emailController = TextEditingController();
 
-  /// The controller for the username field
-  TextEditingController usernameController = TextEditingController();
-  /// The controller for the reset code field
-  TextEditingController codeController = TextEditingController();
 
   /// Whether a network or processing action is underway
   bool isLoading = false;
   /// The current error message displayed in the banner, if any
   String? errorMessage;
+
+
+  
 
   /// Initializes state
   @override
@@ -45,18 +48,24 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   /// Disposes controllers when finished, implemented when exiting page
   @override
   void dispose() {
-    usernameController.dispose();
-    codeController.dispose();
+    emailController.dispose();
     super.dispose();
   }
 
-  /// Sends the password reset code using the entered username
-  Future<void> submitSendCodeForm() async {
+  ///email pattern for regex (taken from au).
+  
+  /// Sends the password reset link using the entered email
+  Future<void> submitSendLinkForm() async {
     FocusScope.of(context).unfocus();
-
-    if (usernameController.text.trim().isEmpty) {
+    if (!formKey.currentState!.validate()) return;
+    if (emailController.text.trim().isEmpty) {
       setState(() {
-        errorMessage = 'Please enter your username';
+        errorMessage = 'Please enter your email';
+      });
+      return;
+    } else if (!authService.getEmailPattern().hasMatch(emailController.text.trim())){
+      setState(() {
+        errorMessage = 'Please enter a valid email';
       });
       return;
     }
@@ -66,20 +75,20 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
       errorMessage = null;
     });
 
-    final username = usernameController.text.trim();
+    final email = emailController.text.trim();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await authService.sendPasswordReset(email);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Password reset code sent for $username!'),
+          content: Text('Password reset link sent for $email, if an account exists for it.'),
           backgroundColor: Colors.green.shade700,
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      final message = 'An unexpected error occurred. Please try again.';
+      final message = 'Error: $e\nAn unexpected error occurred. Please try again.';
       setState(() => errorMessage = message);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -94,52 +103,6 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     }
   }
 
-  /// Validates the reset code input and completes the verification process
-  Future<void> submitVerifyCodeForm() async {
-    FocusScope.of(context).unfocus();
-
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
-
-    try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Code verified successfully!'),
-          backgroundColor: Colors.green.shade700,
-        ),
-      );
-
-      if (widget.onPasswordResetSuccess != null) {
-        widget.onPasswordResetSuccess!();
-      } else if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      final message = 'An unexpected error occurred during verification. Please try again.';
-      setState(() => errorMessage = message);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
-    }
-  }
 
   /// Handles navigation back to the login screen
   void navigateToLogin() {
@@ -149,6 +112,34 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     }
+  }
+
+/// Builds back to login 
+  Widget buildLoginNavigation() {
+    final style = context.style;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Remembered your password?',
+          style: style.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        TextButton(
+          onPressed: isLoading ? null : navigateToLogin,
+          child: Text(
+            'Log In',
+            style: style.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   /// Builds the app icon (idk this was in kade's)
@@ -190,7 +181,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ),
         SizedBox(height: style.spaceSmall),
         Text(
-          'Enter your username to receive and verify your reset code.',
+          'Enter your email to reset your password and send the reset-password link to your email.',
           textAlign: TextAlign.center,
           style: style.textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
@@ -236,36 +227,43 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  /// Builds the username input field
-  Widget buildUsernameField() {
+  /// Builds the email input field
+  Widget buildEmailField() {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
-      controller: usernameController,
-      keyboardType: TextInputType.text,
+      controller: emailController,
+      keyboardType: TextInputType.emailAddress,
       textInputAction: TextInputAction.next,
       enabled: !isLoading,
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: 16,
+      ),
+      cursorColor: colorScheme.primary,
       decoration: const InputDecoration(
-        labelText: 'Username',
-        hintText: 'Enter your username',
+        labelText: 'Email',
+        hintText: 'Enter your email',
+        border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.person_outline),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'Please enter your username';
+          return 'Please enter your email';
         }
         return null;
       },
     );
   }
 
-  /// Builds the button used to request/send the reset code
-  Widget buildSendCodeButton() {
+  /// Builds the button used to request/send the reset link
+  Widget buildSendLinkButton() {
     final style = context.style;
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: isLoading ? null : submitSendCodeForm,
+        onPressed: isLoading ? null : submitSendLinkForm,
         child: Text(
-          'Send Code',
+          'Send Reset Link',
           style: style.textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
@@ -274,87 +272,11 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  /// Builds the reset code input field
-  Widget buildCodeField() {
-    return TextFormField(
-      controller: codeController,
-      keyboardType: TextInputType.number,
-      textInputAction: TextInputAction.done,
-      enabled: !isLoading,
-      onFieldSubmitted: (_) => submitVerifyCodeForm(),
-      decoration: const InputDecoration(
-        labelText: 'Reset Code',
-        hintText: 'Enter code here',
-        prefixIcon: Icon(Icons.lock_reset_outlined),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Please enter the reset code';
-        }
-        if (value.trim().length < 4) {
-          return 'Please enter a valid reset code';
-        }
-        return null;
-      },
-    );
-  }
-
-  /// Builds the button used to verify the entered code
-  Widget buildVerifyCodeButton() {
-    final style = context.style;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : submitVerifyCodeForm,
-        child: isLoading
-            ? SizedBox(
-                height: style.s(20),
-                width: style.s(20),
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2,
-                ),
-              )
-            : Text(
-                'Verify Code',
-                style: style.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-      ),
-    );
-  }
-
-  /// Builds back to login 
-  Widget buildLoginNavigation() {
-    final style = context.style;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          'Remembered your password?',
-          style: style.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        TextButton(
-          onPressed: isLoading ? null : navigateToLogin,
-          child: Text(
-            'Log In',
-            style: style.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+ 
 
   /// Builds the form
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { 
     // Access sitewide design variables from design_main.dart
     final style = context.style;
     final theme = Theme.of(context);
@@ -403,13 +325,9 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         buildErrorBanner(),
                         if (errorMessage != null)
                           SizedBox(height: style.spaceMedium),
-                        buildUsernameField(),
+                        buildEmailField(),
                         SizedBox(height: style.spaceMedium),
-                        buildSendCodeButton(),
-                        SizedBox(height: style.spaceLarge),
-                        buildCodeField(),
-                        SizedBox(height: style.spaceMedium),
-                        buildVerifyCodeButton(),
+                        buildSendLinkButton(),
                         SizedBox(height: style.spaceMedium),
                         buildLoginNavigation(),
                       ],
