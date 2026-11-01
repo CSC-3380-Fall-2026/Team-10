@@ -132,11 +132,64 @@ class FirestoreService {
         return list;
       });
 
-  Future<void> updateOrganization(String orgId, Map<String, dynamic> changes) {
-    return _orgs.doc(orgId).update({
+  /// Updates only the fields you pass in, e.g.
+  ///   updateOrganization(orgId, {'description': 'New description'});
+  ///
+  /// This always edits the club's existing document (same ID), so it never
+  /// makes a copy. If the club doesn't exist, it throws instead of creating one.
+  ///
+  /// If the change includes a NEW 'name', the copies of the club's name
+  /// stored elsewhere are updated too, so nothing shows the old name:
+  ///   - events/{eventId}.organizationName      (the club's events)
+  ///   - users/{uid}/memberships/{orgId}.orgName (members' "My Clubs" lists)
+  /// When the name is unchanged, nothing extra is read or written.
+  Future<void> updateOrganization(
+      String orgId, Map<String, dynamic> changes) async {
+    final orgRef = _orgs.doc(orgId);
+
+    final newName = changes['name'];
+    String? oldName;
+    if (newName is String) {
+      final current = await orgRef.get();
+      if (!current.exists) {
+        throw StateError('Club $orgId does not exist.');
+      }
+      oldName = current.data()?['name'] as String?;
+    }
+
+    await orgRef.update({
       ...changes,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    if (newName is String && newName != oldName) {
+      await _renameClubCopies(orgId, newName);
+    }
+  }
+
+  /// Rewrites every stored copy of a club's name after it's renamed.
+  Future<void> _renameClubCopies(String orgId, String newName) async {
+    final events =
+        await _events.where('organizationId', isEqualTo: orgId).get();
+    final members = await _orgMembers(orgId).get();
+
+    final refsAndChanges = <MapEntry<DocumentReference, Map<String, dynamic>>>[
+      for (final doc in events.docs)
+        MapEntry(doc.reference, {'organizationName': newName}),
+      for (final doc in members.docs)
+        MapEntry(_userMemberships(doc.id).doc(orgId), {'orgName': newName}),
+    ];
+
+    // A Firestore batch holds at most 500 writes, so commit in chunks.
+    const chunkSize = 450;
+    for (var i = 0; i < refsAndChanges.length; i += chunkSize) {
+      final batch = _db.batch();
+      for (final entry in refsAndChanges.skip(i).take(chunkSize)) {
+        // set+merge so a missing membership copy is fixed instead of failing.
+        batch.set(entry.key, entry.value, SetOptions(merge: true));
+      }
+      await batch.commit();
+    }
   }
 
   /// Adds [user] to a club. Writes to both the club's member list

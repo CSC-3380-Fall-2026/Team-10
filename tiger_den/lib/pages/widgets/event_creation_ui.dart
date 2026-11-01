@@ -34,7 +34,7 @@ class EventCreationFormState extends State<EventCreationForm> {
   FirestoreService firestoreService = FirestoreService();
   ///The service used to upload the event to the search function
   SearchService searchService = SearchService();
-  //Used to get tags
+  ///Service used to fetch tags
   TagService tagService = TagService();
   ///The currently signed-in user's profile
   AppUser? currentUser;
@@ -138,8 +138,6 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
     return adminClubs;
   }
-
-  
 
   ///Changes the checkbox color based on the current widget state
   Color checkBoxGetColor(Set<WidgetState> states) {
@@ -346,6 +344,7 @@ class EventCreationFormState extends State<EventCreationForm> {
   Widget buildAddressField() {
     return TextFormField(
       controller: addressController,
+      keyboardType: TextInputType.streetAddress,
       decoration: InputDecoration(
         labelText: 'Event Address',
         border: OutlineInputBorder(),

@@ -361,3 +361,24 @@ saves.
 **Testing:** `flutter run -t lib/dev/event_edit_test_main.dart -d emulator-5554`
 lets you pick a test user and open any event's editing page. On User A's
 Event, User A (creator) and User B (host) can edit it, and User C can't.
+## Editing a club
+
+The club editing page (`lib/pages/widgets/club_Editing.dart`) saves with
+`FirestoreService.updateOrganization(orgId, changes)`. This always edits the
+club's existing document, using the same ID, so it never creates a copy. If
+the club doesn't exist, it throws instead.
+
+When the change includes a new `name`, `updateOrganization` also updates
+every copy of the club's name:
+- `events/{eventId}.organizationName` for the club's events
+- `users/{uid}/memberships/{orgId}.orgName` for each member's "My Clubs" list
+
+If the name didn't change, nothing extra is read or written.
+
+After saving, the page also updates the club's search entry (Algolia) by its
+ID, overwriting the old entry. This needs the Algolia keys in `.env`. Without
+them, the club still saves and the search update is skipped.
+
+**Testing:** `flutter run -t lib/dev/club_edit_test_main.dart -d emulator-5554`
+lets you pick a test user and open any club's editing page. User A (owner) and
+User B (admin) can edit User A's Club. User C (member) can't.

@@ -3,8 +3,7 @@
 Project Manager: Logan Hebert ([https://github.com/Logan-Hebert]) \
 Communications Lead: Kade Whitman ([https://github.com/kmwhitman]) \
 Git Master: James Sigler ([https://github.com/melloon]) \
-Design Lead: Kauai Cooper ([GitHub Name]) \
-Quality Assurance Tester: Eric Chau ([https://github.com/ericchau01])
+Design Lead: Eric Chau ([https://github.com/ericchau01])
 
 # About Our Software
 
