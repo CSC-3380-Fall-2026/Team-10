@@ -343,11 +343,62 @@ class FirestoreService {
 
   /// Updates only the fields you pass in. Dates must be Timestamps, e.g.
   ///   updateEvent(id, {'startTime': Timestamp.fromDate(newStart)});
-  Future<void> updateEvent(String eventId, Map<String, dynamic> changes) {
-    return _events.doc(eventId).update({
+  ///
+  /// This always edits the event's existing document (same ID), so it never
+  /// makes a copy. If the event doesn't exist, it throws instead.
+  ///
+  /// RSVPs copy the event's title, times and location into each attendee's
+  /// calendar (users/{uid}/calendar/{eventId}). If [changes] touches any of
+  /// those, the copies are updated too, so attendees never see old info.
+  /// Other changes (description, tags, capacity...) cost no extra writes.
+  Future<void> updateEvent(
+      String eventId, Map<String, dynamic> changes) async {
+    await _events.doc(eventId).update({
       ...changes,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    final calendarChanges = _calendarCopyFields(changes);
+    if (calendarChanges.isNotEmpty) {
+      await _updateAttendeeCalendars(eventId, calendarChanges);
+    }
+  }
+
+  /// Picks out the event fields that are copied into attendees' calendars,
+  /// renamed to how CalendarEntry stores them.
+  static Map<String, dynamic> _calendarCopyFields(
+      Map<String, dynamic> eventChanges) {
+    final result = <String, dynamic>{};
+    for (final field in const ['title', 'startTime', 'endTime', 'allDay']) {
+      if (eventChanges.containsKey(field)) result[field] = eventChanges[field];
+    }
+    final location = eventChanges['location'];
+    if (location is Map) {
+      result['location'] = location['name']; // calendar stores just the name
+    }
+    return result;
+  }
+
+  /// Updates the calendar copy of an event for everyone who RSVP'd
+  /// "going" or "interested" (people who said "not going" have no copy).
+  Future<void> _updateAttendeeCalendars(
+      String eventId, Map<String, dynamic> calendarChanges) async {
+    final attendees = await _eventAttendees(eventId).get();
+    final uids = attendees.docs
+        .where((doc) => doc.data()['status'] != RsvpStatus.notGoing.name)
+        .map((doc) => doc.id)
+        .toList();
+
+    // A Firestore batch holds at most 500 writes, so commit in chunks.
+    const chunkSize = 450;
+    for (var i = 0; i < uids.length; i += chunkSize) {
+      final batch = _db.batch();
+      for (final uid in uids.skip(i).take(chunkSize)) {
+        batch.set(_userCalendar(uid).doc(eventId), calendarChanges,
+            SetOptions(merge: true));
+      }
+      await batch.commit();
+    }
   }
 
   /// Marks an event cancelled. (Keeps it in the database so attendees

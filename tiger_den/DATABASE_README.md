@@ -337,6 +337,30 @@ this project ("Email template updates are currently unavailable"), so the
 default reset email is used.
 
 
+## Editing an event
+
+The event editing page (`lib/pages/widgets/event_editing.dart`,
+`EventEditForm(eventId: ..., currentUserId: ...)`) mirrors the event creation
+form. It starts filled in with the event's current info, and only the event's
+creator, its hosts, or an owner/admin of its club can edit.
+
+It saves with `FirestoreService.updateEvent(eventId, changes)`, which always
+edits the event's existing document (same ID), so it never creates a copy.
+It doesn't change `createdBy`, `attendeeCount`, `status`, or `createdAt`.
+
+RSVPs copy an event's title, times, and location into each attendee's
+calendar (`users/{uid}/calendar/{eventId}`). When an edit changes any of
+those, `updateEvent` also updates the copies for everyone who is "going" or
+"interested". Other changes (description, tags, capacity) cost no extra
+writes.
+
+After saving, the page also updates the event's search entry (Algolia) by its
+ID. Without the Algolia keys in `.env`, this is skipped and the event still
+saves.
+
+**Testing:** `flutter run -t lib/dev/event_edit_test_main.dart -d emulator-5554`
+lets you pick a test user and open any event's editing page. On User A's
+Event, User A (creator) and User B (host) can edit it, and User C can't.
 ## Editing a club
 
 The club editing page (`lib/pages/widgets/club_Editing.dart`) saves with
