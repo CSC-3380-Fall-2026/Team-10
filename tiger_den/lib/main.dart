@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:tiger_den/pages/widgets/forgot_passoword_page.dart';
 // import 'package:model2vec/model2vec.dart';
 import 'base_designs/sitewide/design_main.dart';
 import 'firebase_options.dart';
@@ -9,6 +10,7 @@ import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import '../test/search_service_test.dart';
 import 'pages/widgets/home_page.dart';
+import '/pages/widgets/forgot_passoword_page.dart';
 
 
 void main() async {
@@ -22,10 +24,8 @@ void main() async {
   } catch (e) {
     debugPrint("Warning: Could not load .env file: $e");
   }
-
-  // runApp(SearchTestButton());
  
-  // runLoginPage();
+  // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
   runHomePage();
@@ -42,6 +42,19 @@ void runLoginPage() {
         child: child!,
       ),
       home: const LoginPage(),
+    ),
+  );
+}
+
+void runForgotPassword() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: const ForgotPasswordPage(),
     ),
   );
 }
