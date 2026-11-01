@@ -8,6 +8,8 @@ import '/pages/widgets/event_creation_ui.dart';
 import 'pages/widgets/login_page.dart';
 import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import '../test/search_service_test.dart';
+import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
 
 
@@ -23,9 +25,10 @@ void main() async {
     debugPrint("Warning: Could not load .env file: $e");
   }
  
-  runForgotPassword();
+  // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
+  runHomePage();
 
 }
 
@@ -70,5 +73,16 @@ void runEventCreationForm(){
   );
 }
 
-
+void runHomePage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: const HomePage(),
+    ),
+  );
+}
   
