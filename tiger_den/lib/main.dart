@@ -7,8 +7,7 @@ import '/pages/widgets/event_creation_ui.dart';
 import 'pages/widgets/login_page.dart';
 import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import '../test/search_service_test.dart';
-
+import 'pages/widgets/calendar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +21,11 @@ void main() async {
     debugPrint("Warning: Could not load .env file: $e");
   }
 
-  // runApp(SearchTestButton());
- 
+  runCalendar();
   // runLoginPage();
   // runImageTest(); 
-  runEventCreationForm();
+  // runEventCreationForm();
+  // runApp(const MaterialApp(home: Calendar()));
 
 }
 
@@ -58,5 +57,12 @@ void runEventCreationForm(){
   );
 }
 
-
+void runCalendar() {
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Calendar(),
+    ),
+  );
+}
   
