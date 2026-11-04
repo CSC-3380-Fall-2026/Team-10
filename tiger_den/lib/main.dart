@@ -25,11 +25,12 @@ void main() async {
   } catch (e) {
     debugPrint("Warning: Could not load .env file: $e");
   }
- 
+
+  runSearchPage();
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
-  runHomePage();
+  // runHomePage();
 
 }
 
@@ -95,7 +96,7 @@ void runSearchPage() {
         data: context.style.theme,
         child: child!,
       ),
-      home: const SearchPage(),
+      home: SearchPage(),
     ),
   );
 }
