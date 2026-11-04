@@ -11,6 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import '../test/search_service_test.dart';
 import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
+import 'pages/entire_screen/search_page.dart';
 
 
 void main() async {
@@ -82,6 +83,19 @@ void runHomePage() {
         child: child!,
       ),
       home: const HomePage(),
+    ),
+  );
+}
+
+void runSearchPage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: const SearchPage(),
     ),
   );
 }
