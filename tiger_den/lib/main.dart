@@ -11,7 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import '../test/search_service_test.dart';
 import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
-
+import 'pages/widgets/calendar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,11 +25,12 @@ void main() async {
     debugPrint("Warning: Could not load .env file: $e");
   }
  
+
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
   runHomePage();
-
+  // runCalendar();
 }
 
 //run app for login and signup page
@@ -86,3 +87,11 @@ void runHomePage() {
   );
 }
   
+void runCalendar() {
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Calendar(),
+    ),
+  );
+}
