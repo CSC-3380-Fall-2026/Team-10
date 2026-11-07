@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../services/search_service.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/image_service.dart';
+import '../widgets/filter_widget.dart';
+import '../../models/search_filter.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -20,6 +22,8 @@ class SearchPageState extends State<SearchPage> {
   ImageService imageService = ImageService();
   /// Holds fetched image URLs in a Map to their objectID
   Map<String, String> imageUrls = {};
+  // /// /The controller for the searchbar
+  // final TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -45,7 +49,7 @@ class SearchPageState extends State<SearchPage> {
               });
             }
           } catch (e) {}
-        } else if (result['type'] == 'event'){
+        } else if (result['type'] == 'event'){ 
           String objectId = result['objectID'];
           try {
             String url = await imageService.getClubImageURL(objectId);
@@ -107,7 +111,7 @@ class SearchPageState extends State<SearchPage> {
               left: context.style.spaceLarge,
               top: context.style.spaceMedium,
               right: context.style.spaceLarge,
-              bottom: context.style.spaceExraSmall,
+              bottom: context.style.spaceExtraSmall,
             ),
             child: ListTile (
               tileColor: Theme.of(context).colorScheme.surface,
@@ -139,7 +143,7 @@ class SearchPageState extends State<SearchPage> {
         left: cont.style.spaceMedium,
         top: cont.style.spaceSmall,
         right: cont.style.spaceMedium,
-        bottom: cont.style.spaceExraSmall,
+        bottom: cont.style.spaceExtraSmall,
       ),
       child: TextField( 
         onSubmitted: (value) async {
@@ -153,8 +157,34 @@ class SearchPageState extends State<SearchPage> {
           }
         },
         decoration: InputDecoration(
-          hintText: "Search..."
-        ),
+          hintText: "Search...",
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.filter_alt),
+              onPressed: () {
+                ///bring up search filters
+              },
+            ),
+          ),
+      )
+    );
+  }
+
+  Widget searchTitle(String text, BuildContext cont) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: cont.style.spaceMedium,
+        top: cont.style.spaceSmall,
+        right: cont.style.spaceMedium,
+        bottom: cont.style.spaceSmall,
+      ), 
+      child: Center( 
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: cont.style.textTheme.titleLarge!.fontSize, //Maybe change in final design
+            color: Theme.of(cont).colorScheme.onSurface
+          ),
+        )
       )
     );
   }
@@ -166,12 +196,15 @@ class SearchPageState extends State<SearchPage> {
         child: Column (
           children: [
             searchBar(context),
+            searchTitle("Clubs and Organizations:", context),
+            Expanded (
+              child: indexListView('club') ///might need to do an intermediate widget for searchpage idle screen
+            ),
+            searchTitle("Events that match:", context),
             Expanded (
               child: indexListView('event')
             ),
-            Expanded (
-              child: indexListView('club')
-            ),
+            //backToTop()
           ],
         )
       )
@@ -180,6 +213,5 @@ class SearchPageState extends State<SearchPage> {
 }
 
 //to do: loading wheel thing? (for search definitely, maybe image loading)
-//add borders
-//it also searches tags, might wanna remove
-//neeed the title separation stuff lol
+
+//it also searches tags and categories and stuff, might wanna remove
