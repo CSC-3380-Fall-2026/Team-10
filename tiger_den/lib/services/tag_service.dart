@@ -1,5 +1,5 @@
 class TagService {
-  static const List<String> tags = [
+  static const List<String> _tags = [
     'Academic',
     'Professional Career Development',
     'Social Justice',
@@ -68,6 +68,6 @@ class TagService {
     ];
 
     List<String> fetchTags() {
-    return tags;
+    return _tags;
   }
 }
