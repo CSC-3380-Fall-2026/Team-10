@@ -73,7 +73,6 @@ class SearchPageState extends State<SearchPage> {
         itemCount: filteredList.length,
         itemBuilder: (context, index){ 
           SearchResult result = filteredList[index];
-
           String description = result['description'];
           String shortDes = ' ';
           if(description != null){
@@ -94,16 +93,31 @@ class SearchPageState extends State<SearchPage> {
 
 
           String imagelink = imageUrls[result['objectID']] ?? "";
-
-          Image? imageDisplay = null;
+          
+          Widget? imageDisplay;
           if (imagelink != "") {
-            imageDisplay = Image.network(
-                imagelink,
+            imageDisplay = ClipRRect(
+                child: Image.network(
+                  imagelink,
+                )
               );
             }
           return Padding (
-            padding: EdgeInsets.all(context.style.spaceMedium),
+            padding: EdgeInsets.only(
+              left: context.style.spaceLarge,
+              top: context.style.spaceMedium,
+              right: context.style.spaceLarge,
+              bottom: context.style.spaceExraSmall,
+            ),
             child: ListTile (
+              tileColor: Theme.of(context).colorScheme.surface,
+              onTap: () {
+                if(type == "event"){
+                  print('add link to event viewing widgets hereeeeeeeeeeeeeeee');
+                } else if (type == "club"){
+                  print('add link to club viewing widgets hereeeeeeeeeeeeeeee');
+                }
+                  },
               shape: RoundedRectangleBorder(
                 side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0),
                 borderRadius: BorderRadius.circular(context.style.radius)
@@ -121,7 +135,12 @@ class SearchPageState extends State<SearchPage> {
 
   Widget searchBar(BuildContext cont) {
     return Container(
-      padding: EdgeInsets.all(cont.style.spaceSmall),
+      padding: EdgeInsets.only(
+        left: cont.style.spaceMedium,
+        top: cont.style.spaceSmall,
+        right: cont.style.spaceMedium,
+        bottom: cont.style.spaceExraSmall,
+      ),
       child: TextField( 
         onSubmitted: (value) async {
           if (value.trim().isEmpty) return;
@@ -160,6 +179,7 @@ class SearchPageState extends State<SearchPage> {
   }
 }
 
-//to do: loading wheel thing?
+//to do: loading wheel thing? (for search definitely, maybe image loading)
 //add borders
 //it also searches tags, might wanna remove
+//neeed the title separation stuff lol
