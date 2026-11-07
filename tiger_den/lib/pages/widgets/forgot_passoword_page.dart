@@ -9,7 +9,7 @@ class ForgotPasswordPage extends StatefulWidget {
     this.onNavigateToLogin,
   });
 
-  /// Optional callback invoked after successful password reset request.
+  ///Optional callback invoked after successful password reset request.
   final VoidCallback? onPasswordResetSuccess;
 
   /// Optional callback when the user taps "Remembered your password? Log In".
@@ -23,7 +23,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 /// Stores the state and form data for ForgotPasswordPage
 class ForgotPasswordPageState extends State<ForgotPasswordPage> {
-  /// The key used to validate this form
+  ///The key used to validate this form
   final formKey = GlobalKey<FormState>();
   ///auth_service for password reset logic
   AuthService authService = AuthService();
@@ -31,9 +31,9 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   TextEditingController emailController = TextEditingController();
 
 
-  /// Whether a network or processing action is underway
+  ///Whether we are done loading or not
   bool isLoading = false;
-  /// The current error message displayed in the banner, if any
+  ///The current error message displayed in the banner
   String? errorMessage;
 
 
@@ -52,7 +52,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  ///email pattern for regex (taken from au).
+
   
   /// Sends the password reset link using the entered email
   Future<void> submitSendLinkForm() async {
@@ -104,7 +104,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
 
-  /// Handles navigation back to the login screen
+  ///Handles navigation back to the login screen
   void navigateToLogin() {
     if (widget.onNavigateToLogin != null) {
       widget.onNavigateToLogin!();
@@ -142,7 +142,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  /// Builds the app icon (idk this was in kade's)
+  ///Builds the app icon (idk this was in kade's)
   Widget buildIcon() {
     final style = context.style;
     final colorScheme = Theme.of(context).colorScheme;
@@ -227,7 +227,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  /// Builds the email input field
+  ///Builds the email input field
   Widget buildEmailField() {
     final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
@@ -277,12 +277,10 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   /// Builds the form
   @override
   Widget build(BuildContext context) { 
-    // Access sitewide design variables from design_main.dart
     final style = context.style;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Responsive form container max width for medium and expanded screens
     final isCompact = style.screen == ScreenSize.compact;
     final maxCardWidth = isCompact ? double.infinity : 460.0;
 

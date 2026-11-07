@@ -4,13 +4,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 typedef SearchResult = Map<String, dynamic>;
 class SearchService {
   SearchClient? _client;
-  ///Enviornmental variable used to enable search index write and search; the Algolia ID for our project
+  /// Enviornmental variable used to enable search index write and search; the Algolia ID for our project
   String? _appIdKey = dotenv.env['ALGOLIA_APP_ID']?.trim();
-  ///Enviornmental variable used to enable search index search
+  /// Enviornmental variable used to enable search index search
   String? _searchKey = dotenv.env['ALGOLIA_SEARCH_ONLY_KEY']?.trim();
-  ///Enviornmental variable used to enable search index writeIf we have time, hide this later for security reasons
+  /// Enviornmental variable used to enable search index writeIf we have time, hide this later for security reasons
   String? _writeKey = dotenv.env['ALGOLIA_WRITE_KEY']?.trim();
-  ///Initializes the client needed for algolia function
+  /// Initializes the client needed for algolia function
   SearchService() {
     _getSearchClient("write");
   } 
@@ -146,3 +146,5 @@ class SearchService {
     return [];
   }
 }
+
+
