@@ -4,7 +4,7 @@ import '../../services/search_service.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/image_service.dart';
 import '../widgets/filter_widget.dart';
-import '../../models/search_filter.dart';
+
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -22,16 +22,29 @@ class SearchPageState extends State<SearchPage> {
   ImageService imageService = ImageService();
   /// Holds fetched image URLs in a Map to their objectID
   Map<String, String> imageUrls = {};
-  // /// /The controller for the searchbar
-  // final TextEditingController searchController = TextEditingController();
-
+  /// List of current filters
+  List<String> currentFilters = [];
+  /// Controller to track and reuse the current search query
+  TextEditingController searchController = TextEditingController();
+  
+  int clubLimit = 5;
+  int eventLimit = 5;
+  /// Initializes the page
+  int currentPage = 0; 
+  bool loadingMore = false;
   @override
   void initState() {
     super.initState();
   }
+  /// Disposes text controllers when closing page
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   Widget noItemsFound(){
-    return SafeArea(
+    return SliverToBoxAdapter(
       child: Text("No results found.")
     );
   }
@@ -41,15 +54,16 @@ class SearchPageState extends State<SearchPage> {
       if (result['objectID'] != null) {
         if(result['type'] == 'event'){
           String objectId = result['objectID'];
+          if (imageUrls.containsKey(objectId)) continue;
           try {
-            String url = await imageService.getEventImageURL(objectId);
+            String url = await imageService.getEventImageURL(objectId); ///'6C7ZGFjaJs5jMVYvzSoj'
             if (mounted) {
               setState(() {
                 imageUrls[objectId] = url;
               });
             }
           } catch (e) {}
-        } else if (result['type'] == 'event'){ 
+        } else if (result['type'] == 'club'){ 
           String objectId = result['objectID'];
           try {
             String url = await imageService.getClubImageURL(objectId);
@@ -63,7 +77,24 @@ class SearchPageState extends State<SearchPage> {
       }
     }
   }
+  Future<void> loadMore() async {
+    if (loadingMore) return; //prevent da spamclick
+    setState(() => loadingMore = true);
+    String input = searchController.text.trim();
+    int nextPage = currentPage + 1;
+    final moreResults = await searchService.search(input: input, page: nextPage);
+    setState(() {
+      loadingMore = false;
+      if (moreResults != null && moreResults.isNotEmpty) {
+        currentPage = nextPage;
+        _indexList.addAll(moreResults);
+      }
+    });
 
+    if (moreResults != null && moreResults.isNotEmpty) {
+      fetchImages(moreResults);
+    }
+  }
   Widget indexListView(String type){
     if (_indexList.isEmpty) {
       return noItemsFound();
@@ -72,10 +103,12 @@ class SearchPageState extends State<SearchPage> {
     if(filteredList.isEmpty){
       return noItemsFound();
     }
-    return SafeArea(
-      child: ListView.builder(
-        itemCount: filteredList.length,
-        itemBuilder: (context, index){ 
+
+    int currentLimit = (type == 'club') ? clubLimit : eventLimit;
+    int displayCount = (filteredList.length <= currentLimit) ? filteredList.length : currentLimit;
+    return SliverList(
+    delegate: SliverChildBuilderDelegate(
+        (context, index){ 
           SearchResult result = filteredList[index];
           String description = result['description'];
           String shortDes = ' ';
@@ -100,12 +133,15 @@ class SearchPageState extends State<SearchPage> {
           
           Widget? imageDisplay;
           if (imagelink != "") {
-            imageDisplay = ClipRRect(
+            imageDisplay = SizedBox(
+              child: ClipRRect(
                 child: Image.network(
                   imagelink,
+                  fit: BoxFit.cover,
                 )
-              );
-            }
+              )          
+            );
+          } 
           return Padding (
             padding: EdgeInsets.only(
               left: context.style.spaceLarge,
@@ -113,28 +149,77 @@ class SearchPageState extends State<SearchPage> {
               right: context.style.spaceLarge,
               bottom: context.style.spaceExtraSmall,
             ),
-            child: ListTile (
-              tileColor: Theme.of(context).colorScheme.surface,
-              onTap: () {
-                if(type == "event"){
-                  print('add link to event viewing widgets hereeeeeeeeeeeeeeee');
-                } else if (type == "club"){
-                  print('add link to club viewing widgets hereeeeeeeeeeeeeeee');
-                }
-                  },
+            child: Material(
+              color: context.style.colorScheme.surface,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0),
-                borderRadius: BorderRadius.circular(context.style.radius)
+                borderRadius: BorderRadius.circular(context.style.radius),
+                side: BorderSide(
+                  color: context.style.colorScheme.primary,
+                  width: 2,
+                ),
               ),
-              leading: imageDisplay,
-              title: Text(result['title'] ?? ""),
-              subtitle: Text(subtitle),
-              trailing: Text(result['category'] ?? ""),
+              child: ListTile (
+                tileColor: context.style.colorScheme.surface,
+                onTap: () {
+                  if(type == "event"){
+                    print('add link to event viewing widgets hereeeeeeeeeeeeeeee');
+                  } else if (type == "club"){
+                    print('add link to club viewing widgets hereeeeeeeeeeeeeeee');
+                  }
+                    },
+                leading: imageDisplay,
+                title: Text(result['title'] ?? ""),
+                subtitle: Text(subtitle),
+                trailing: Text(result['category'] ?? ""),
+              )
             )
           );
-        }
+        },
+        childCount: displayCount,
       )
     );
+  }
+
+  Widget showMoreButton(String type) {
+    final filteredList = _indexList.where((item) => item['type'] == type).toList();
+    int currentLimit = (type == 'club') ? clubLimit : eventLimit;
+    if (filteredList.length <= currentLimit) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+    return SliverToBoxAdapter(
+      child: Center(
+        child: TextButton.icon(
+          onPressed: () {
+            setState(() {
+              if (type == 'club') {
+                clubLimit += 5; 
+              } else {
+                eventLimit += 5; 
+              }
+            });
+            if (currentLimit >= filteredList.length) {
+              loadMore();
+            }
+          },
+          icon: const Icon(Icons.keyboard_arrow_down),
+          label: const Text("Show More"),
+        ),
+      ),
+    );
+  }
+  Future<void> search() async {
+    String input = searchController.text.trim();
+    if (input.isEmpty) return;
+    final results = await searchService.search(input: input);
+    setState(() {
+      _indexList = results ?? [];
+      clubLimit = 5; 
+      eventLimit = 5; 
+      currentPage = 0;
+    });
+    if (results != null) {
+      fetchImages(results);
+    }
   }
 
   Widget searchBar(BuildContext cont) {
@@ -146,22 +231,16 @@ class SearchPageState extends State<SearchPage> {
         bottom: cont.style.spaceExtraSmall,
       ),
       child: TextField( 
+        controller: searchController,
         onSubmitted: (value) async {
-          if (value.trim().isEmpty) return;
-          final results = await searchService.search(input: value);
-          setState(() {
-            _indexList = results ?? [];
-          });
-          if (results != null) {
-            fetchImages(results);
-          }
+          search();
         },
         decoration: InputDecoration(
           hintText: "Search...",
           suffixIcon: IconButton(
             icon: const Icon(Icons.filter_alt),
               onPressed: () {
-                ///bring up search filters
+                Scaffold.of(cont).openEndDrawer();
               },
             ),
           ),
@@ -169,13 +248,13 @@ class SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget searchTitle(String text, BuildContext cont) {
+  Widget displayTitle(String text, BuildContext cont) {
     return Container(
       padding: EdgeInsets.only(
         left: cont.style.spaceMedium,
         top: cont.style.spaceSmall,
         right: cont.style.spaceMedium,
-        bottom: cont.style.spaceSmall,
+        bottom: 0,
       ), 
       child: Center( 
         child: Text(
@@ -189,25 +268,58 @@ class SearchPageState extends State<SearchPage> {
     );
   }
 
+  Widget filterDrawer(){
+    return Drawer(
+      width: context.style.width * 0.75,
+            child: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: FilterWidget(
+                alreadySelected: currentFilters,
+                onFiltersSubmitted: (updatedFilters) {
+                  setState(() {
+                    currentFilters = updatedFilters;
+                  });
+                  if (searchController.text.isNotEmpty) {
+                    search();
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context){
     return Scaffold(
-      body: SizedBox.expand(
-        child: Column (
-          children: [
-            searchBar(context),
-            searchTitle("Clubs and Organizations:", context),
-            Expanded (
-              child: indexListView('club') ///might need to do an intermediate widget for searchpage idle screen
+      endDrawer: filterDrawer(),
+      body: SafeArea( 
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Builder(
+                builder: (BuildContext cont) {
+                  return searchBar(cont);
+                },
+              ),
             ),
-            searchTitle("Events that match:", context),
-            Expanded (
-              child: indexListView('event')
+            SliverToBoxAdapter(
+              child: displayTitle("Clubs and Organizations:", context),
             ),
-            //backToTop()
+            indexListView('club'),
+            showMoreButton('club'),
+            SliverToBoxAdapter(
+              child: displayTitle("Events that match:", context),
+            ),
+            indexListView('event'),
+            showMoreButton('event'),
           ],
-        )
-      )
+        ),
+      ),
     );
   }
 }

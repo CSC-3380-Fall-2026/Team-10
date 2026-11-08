@@ -118,7 +118,7 @@ class SearchService {
             indexName: 'project_SEARCH',
             query: input,
             facetFilters: filters,
-            page: 0,  
+            page: page,  
             hitsPerPage: 20,
             typoTolerance: true,
             minWordSizefor1Typo: 4, //Seems to be the recommended size to start for 1 typo

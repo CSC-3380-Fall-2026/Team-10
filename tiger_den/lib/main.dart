@@ -12,6 +12,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
 import 'pages/entire_screen/search_page.dart';
+import 'pages/widgets/filter_widget.dart';
+// import 'page'
 
 
 void main() async {
@@ -26,6 +28,7 @@ void main() async {
     debugPrint("Warning: Could not load .env file: $e");
   }
 
+  // runFilterTest();
   runSearchPage();
   // runForgotPassword();
   // runImageTest(); 
@@ -101,3 +104,19 @@ void runSearchPage() {
   );
 }
   
+void runFilterTest() {
+  void filters(List<String> selectedFilters) {}
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: FilterWidget(
+            alreadySelected: const ["official"],
+            onFiltersSubmitted: filters,
+          ),
+        ),
+    );
+}
