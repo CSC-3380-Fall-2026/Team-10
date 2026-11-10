@@ -26,6 +26,8 @@ class SearchPageState extends State<SearchPage> {
   List<String> currentFilters = [];
   /// Controller to track and reuse the current search query
   TextEditingController searchController = TextEditingController();
+  /// Controller to scroll back to the top
+  ScrollController scrollController = ScrollController();
   
   int clubLimit = 5;
   int eventLimit = 5;
@@ -36,10 +38,12 @@ class SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
   }
-  /// Disposes text controllers when closing page
+  /// Disposes controllers when closing page
   @override
   void dispose() {
     searchController.dispose();
+    scrollController.dispose();
+    imageService.cleanUp();
     super.dispose();
   }
 
@@ -293,12 +297,34 @@ class SearchPageState extends State<SearchPage> {
     );
   }
 
+  void scrollToTop() {
+    if (scrollController.hasClients) {
+      scrollController.animateTo(
+        scrollController.position.minScrollExtent,
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+
+
+    Widget goToTopButton(){
+    return ElevatedButton.icon(
+      onPressed: scrollToTop,
+      icon: Icon(Icons.arrow_upward),
+      label: Text("Go Back to Top"));
+  }
+
+
+
   @override
   Widget build(BuildContext context){
     return Scaffold(
       endDrawer: filterDrawer(),
       body: SafeArea( 
         child: CustomScrollView(
+          controller: scrollController,
           slivers: [
             SliverToBoxAdapter(
               child: Builder(
@@ -317,6 +343,7 @@ class SearchPageState extends State<SearchPage> {
             ),
             indexListView('event'),
             showMoreButton('event'),
+            goToTopButton(),
           ],
         ),
       ),
