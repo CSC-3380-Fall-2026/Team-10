@@ -12,6 +12,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
 import 'pages/widgets/calendar.dart';
+import 'pages/entire_screen/search_page.dart';
+import 'pages/widgets/filter_widget.dart';
+// import 'page'
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,8 +33,16 @@ void main() async {
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
-  runHomePage();
+//   runHomePage();
   // runCalendar();
+
+  // runFilterTest();
+  runSearchPage();
+  // runForgotPassword();
+  // runImageTest(); 
+  // runEventCreationForm();
+  // runHomePage();
+
 }
 
 //run app for login and signup page
@@ -86,6 +98,19 @@ void runHomePage() {
     ),
   );
 }
+
+void runSearchPage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: SearchPage(),
+    ),
+  );
+}
   
 void runCalendar() {
   runApp(
@@ -94,4 +119,20 @@ void runCalendar() {
       home: Calendar(),
     ),
   );
+}
+void runFilterTest() {
+  void filters(List<String> selectedFilters) {}
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: FilterWidget(
+            alreadySelected: const ["official"],
+            onFiltersSubmitted: filters,
+          ),
+        ),
+    );
 }

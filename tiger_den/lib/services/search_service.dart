@@ -3,42 +3,42 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 typedef SearchResult = Map<String, dynamic>;
 class SearchService {
-  SearchClient? client;
-  ///Enviornmental variable used to enable search index write and search; the Algolia ID for our project
-  String? appIdKey = dotenv.env['ALGOLIA_APP_ID']?.trim();
-  ///Enviornmental variable used to enable search index search
-  String? searchKey = dotenv.env['ALGOLIA_SEARCH_ONLY_KEY']?.trim();
-  ///Enviornmental variable used to enable search index writeIf we have time, hide this later for security reasons
-  String? writeKey = dotenv.env['ALGOLIA_WRITE_KEY']?.trim();
-  ///Initializes the client needed for algolia function
+  SearchClient? _client;
+  /// Enviornmental variable used to enable search index write and search; the Algolia ID for our project
+  String? _appIdKey = dotenv.env['ALGOLIA_APP_ID']?.trim();
+  /// Enviornmental variable used to enable search index search
+  String? _searchKey = dotenv.env['ALGOLIA_SEARCH_ONLY_KEY']?.trim();
+  /// Enviornmental variable used to enable search index writeIf we have time, hide this later for security reasons
+  String? _writeKey = dotenv.env['ALGOLIA_WRITE_KEY']?.trim();
+  /// Initializes the client needed for algolia function
   SearchService() {
-    getSearchClient("write");
+    _getSearchClient("write");
   } 
-///Gets the client needed for algolia functions
-  SearchClient? getSearchClient(String clientType){
-    if (appIdKey == null){
+  ///Gets the client needed for algolia functions
+  SearchClient? _getSearchClient(String clientType){
+    if (_appIdKey == null){
       print("App ID api key null");
       return null;
     }
     if (clientType =="write") {
-      if (writeKey == null){
+      if (_writeKey == null){
         print("Write api key null");
         return null;
       }
-      client = SearchClient(appId: appIdKey!, apiKey: writeKey!);
+      _client = SearchClient(appId: _appIdKey!, apiKey: _writeKey!);
     } else {
-      if (clientType =="search" && searchKey == null){
+      if (clientType =="search" && _searchKey == null){
         print("Search api key null");
         return null;
         }
-        client = SearchClient(appId: appIdKey!, apiKey: searchKey!);}
-    return client; 
+        _client = SearchClient(appId: _appIdKey!, apiKey: _searchKey!);}
+    return _client; 
   }
   ///Creates and index for searching. Neccessary for every time an event or club is added. type refers to event vs club, category is official vs unofficial 
   ///When u want to edit an index, use this. 
   Future<String> createIndex(String type, String title, String description, String id, List<String>tags, String category) async {
     try {
-      getSearchClient("write");
+      SearchClient? client = _getSearchClient("write");
       SaveObjectResponse response = await client!.saveObject(
         indexName: 'project_SEARCH',
         body: {
@@ -64,8 +64,8 @@ class SearchService {
       return; 
     }
     try {
-      getSearchClient("write");
-      await client!.deleteObject(
+      SearchClient client = _getSearchClient("write")!;
+      await client.deleteObject(
         indexName: 'project_SEARCH',
         objectID: indexId,
       );
@@ -76,7 +76,7 @@ class SearchService {
   }
 
   ///Takes user input, searches Algolia, and returns items ranked in relation to it. Has some page logic included. 
-  Future<List<SearchResult>>? search({
+  Future<List<SearchResult>>? search ({
     required String input,
     String? type,
     String? category,
@@ -84,15 +84,15 @@ class SearchService {
     int page = 0,
   }) async {
     try {
-      if (searchKey == null) {
-        print("SearchKey null.");
+      if (_searchKey == null) {
+        print("_searchKey null.");
         return [];
       }
-      if (appIdKey == null) {
-        print("appIdKey null.");
+      if (_appIdKey == null) {
+        print("_appIdKey null.");
         return [];
       }
-      getSearchClient("search");
+      SearchClient client = _getSearchClient("search")!;
       List<String> conditions = [];
       if (type != null && type.trim().isNotEmpty) {
         conditions.add("type:'${type.trim()}'");
@@ -118,7 +118,7 @@ class SearchService {
             indexName: 'project_SEARCH',
             query: input,
             facetFilters: filters,
-            page: 0,  
+            page: page,  
             hitsPerPage: 20,
             typoTolerance: true,
             minWordSizefor1Typo: 4, //Seems to be the recommended size to start for 1 typo
@@ -146,3 +146,5 @@ class SearchService {
     return [];
   }
 }
+
+
