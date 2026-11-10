@@ -11,6 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import '../test/search_service_test.dart';
 import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
+import 'pages/widgets/calendar.dart';
 import 'pages/entire_screen/search_page.dart';
 import 'pages/widgets/filter_widget.dart';
 // import 'page'
@@ -27,6 +28,13 @@ void main() async {
   } catch (e) {
     debugPrint("Warning: Could not load .env file: $e");
   }
+ 
+
+  // runForgotPassword();
+  // runImageTest(); 
+  // runEventCreationForm();
+//   runHomePage();
+  // runCalendar();
 
   // runFilterTest();
   runSearchPage();
@@ -104,6 +112,14 @@ void runSearchPage() {
   );
 }
   
+void runCalendar() {
+  runApp(
+    const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Calendar(),
+    ),
+  );
+}
 void runFilterTest() {
   void filters(List<String> selectedFilters) {}
   runApp(
