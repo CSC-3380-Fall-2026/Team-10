@@ -5,14 +5,17 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../firebase_options.dart';
 import '../models/organization.dart';
 import '../pages/widgets/club_Editing.dart';
+import '../pages/widgets/club_creation.dart';
 import '../services/firestore_service.dart';
 
-/// A test-only way to open the club editing page as any test user.
+/// A test-only way to open the club creation and editing pages as any
+/// test user.
 ///
 /// Run it with (from the tiger_den folder):
 ///   flutter run -t lib/dev/club_edit_test_main.dart -d emulator-5554
 ///
-/// Pick who you are (test users from seed_data.dart), then tap a club.
+/// Pick who you are (test users from seed_data.dart), then tap
+/// "Create a club" or tap a club to edit it.
 ///   User A - owner of User A's Club        -> can edit it
 ///   User B - owner of User B's Club, admin in User A's Club -> can edit both
 ///   User C - regular member                -> can't edit either
@@ -69,6 +72,20 @@ class _ClubEditTestPageState extends State<ClubEditTestPage> {
     ));
   }
 
+  void _openCreator() {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Create a Club')),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ClubCreateForm(currentUserId: _userId),
+          ),
+        ),
+      ),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -84,6 +101,12 @@ class _ClubEditTestPageState extends State<ClubEditTestPage> {
                 DropdownMenuItem(value: entry.key, child: Text(entry.value)),
             ],
             onChanged: (value) => setState(() => _userId = value!),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _openCreator,
+            icon: const Icon(Icons.add),
+            label: const Text('Create a club'),
           ),
           const SizedBox(height: 24),
           Text('Tap a club to edit it',
