@@ -79,7 +79,7 @@ class SearchService {
   Future<List<SearchResult>>? search ({
     required String input,
     String? type,
-    String? category,
+    List<String>? category,
     List<String>? selectedTags,
     int page = 0,
   }) async {
@@ -97,8 +97,13 @@ class SearchService {
       if (type != null && type.trim().isNotEmpty) {
         conditions.add("type:'${type.trim()}'");
       }
-      if (category != null && category.trim().isNotEmpty) {
-        conditions.add("category:'${category.trim()}'");
+      if (category != null && category.isNotEmpty) {
+        for (var cat in category) {
+          if (cat.trim().isNotEmpty) {
+            conditions.add("category:'${cat.trim()}'");
+          }
+        }
+        
       }
 
       if (selectedTags != null && selectedTags.isNotEmpty) {
@@ -110,14 +115,15 @@ class SearchService {
       }
       List<List<String>>? filters;
       if (conditions.isNotEmpty) {
-        filters = [conditions];
+        filters = conditions.map((String c) => [c]).toList();
       }
-      final searchParams = SearchMethodParams(
+      SearchMethodParams searchParams = SearchMethodParams(
         requests: [
           SearchForHits(
             indexName: 'project_SEARCH',
             query: input,
             facetFilters: filters,
+            restrictSearchableAttributes: ['title', 'description'],
             page: page,  
             hitsPerPage: 20,
             typoTolerance: true,
@@ -133,7 +139,7 @@ class SearchService {
         List<SearchResult> cleanedResults = [];
         if (hits != null) {
           for (var hit in hits) {
-            // SearchResult data = Map<String, dynamic>.from(hit);
+            
             cleanedResults.add(hit); 
           }
         }

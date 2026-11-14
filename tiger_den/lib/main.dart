@@ -33,11 +33,12 @@ void main() async {
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
-//   runHomePage();
+  runHomePage();
   // runCalendar();
 
   // runFilterTest();
-  runSearchPage();
+
+  // runSearchPage();
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();

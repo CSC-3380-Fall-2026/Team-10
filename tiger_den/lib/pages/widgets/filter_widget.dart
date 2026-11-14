@@ -4,7 +4,7 @@ import '../../base_designs/sitewide/design_main.dart';
 import '../../services/tag_service.dart';
 
 class FilterWidget extends StatefulWidget {
-  /// List of already selected filters
+  /// List of already selected filters 
   final List<String> alreadySelected;
   /// Callback 
   final Function(List<String>) onFiltersSubmitted; 
@@ -26,13 +26,17 @@ class FilterWidgetState extends State<FilterWidget> {
   /// 
   late List<String> availableTags;
   ///
+  late Map<String, List<String>> orderedTags;
+  
   ScrollController scrollController = ScrollController();
   /// 
   @override
   void initState() {
     super.initState(); 
-    availableTags = tagService.fetchTags(); 
+    availableTags = List.from(tagService.fetchTags()); 
     selectedFilters = List.from(widget.alreadySelected);
+    orderedTags = Map.from(tagService.fetchCatTags());
+    updateSelectAll();
   }
   ///Disposes scroll controller when page closes
   @override
@@ -89,19 +93,47 @@ class FilterWidgetState extends State<FilterWidget> {
     );
   }
 
+
+  Widget displayTagTitle(String text, BuildContext cont) {
+    return Container(
+      padding: EdgeInsets.all(cont.style.spaceExtraSmall), 
+      child: Center( 
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: cont.style.textTheme.titleMedium!.fontSize, //Maybe change in final design
+            color: Theme.of(cont).colorScheme.onSurface
+          ),
+        )
+      )
+    );
+  }//availableTags
   /// 
-  Widget listTags(){
+  Widget listTagNTitle(){
+    return Column(
+      children: orderedTags.entries.map((MapEntry<String, List<String>> entry) {
+        return Column(
+          children: [
+            displayTagTitle(entry.key, context),
+            listTags(entry.value), 
+          ],
+        );
+      }).toList(),
+    );
+  }
+  Widget listTags(List<String> avTags){
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: availableTags.length,
+      itemCount: avTags.length,
       itemBuilder: (context, index) {
-        String tag = availableTags[index];
+        String tag = avTags[index];
         if(tag == "official" || tag == 'unofficial'){
-          return Container();
+          return SizedBox.shrink();
         }
         bool isChecked = selectedFilters.contains(tag);
         return CheckboxListTile(
+          visualDensity: VisualDensity.compact,
           title: Text(tag),
           value: isChecked,
           onChanged: (bool? value) {
@@ -111,6 +143,7 @@ class FilterWidgetState extends State<FilterWidget> {
               } else {
                 selectedFilters.remove(tag);
               }
+              updateSelectAll();
             });
           },
         );
@@ -118,6 +151,45 @@ class FilterWidgetState extends State<FilterWidget> {
     );
   }
 
+  bool allSelected = false;
+  String selectText = "Select All";
+  void updateSelectAll() {
+    bool matchesAll = ((availableTags.every((tag) => selectedFilters.contains(tag))) && selectedFilters.contains("official") && selectedFilters.contains("unofficial"));
+    setState(() {
+      allSelected = matchesAll;
+      selectText = allSelected ? "Deselect All" : "Select All";
+    });
+  }
+
+Widget selectAll() {
+  return CheckboxListTile(
+    title: Text(selectText),
+    value: allSelected,
+    onChanged: (bool? value) {
+      setState(() {
+        if (value == true) {
+          allSelected = true;
+          selectText = "Deselect All";
+          for (var tag in availableTags) {
+            if (!selectedFilters.contains(tag)) {
+              selectedFilters.add(tag);
+            }
+          }
+          if (!selectedFilters.contains("official")) selectedFilters.add("official");
+          if (!selectedFilters.contains("unofficial")) selectedFilters.add("unofficial");
+        } else {
+          allSelected = false;
+          selectText = "Select All";
+          for (var tag in availableTags) {
+            selectedFilters.remove(tag);
+          }
+          if (selectedFilters.contains("official")) selectedFilters.remove("official");
+          if (selectedFilters.contains("unofficial")) selectedFilters.remove("unofficial");
+        }
+      });
+    },
+  );
+}
   ///
   Widget listCategories() { 
     bool offChecked = selectedFilters.contains("official");
@@ -134,6 +206,7 @@ class FilterWidgetState extends State<FilterWidget> {
               } else {
                 selectedFilters.remove("official");
               }
+              updateSelectAll();
             });
           },
         ),
@@ -147,6 +220,7 @@ class FilterWidgetState extends State<FilterWidget> {
               } else {
                 selectedFilters.remove("unofficial");
               }
+              updateSelectAll();
             });
           },
         )
@@ -172,9 +246,8 @@ class FilterWidgetState extends State<FilterWidget> {
           child: FloatingActionButton.extended(
             onPressed: scrollToBottom,
             icon: Icon(Icons.arrow_downward),
-            // label: Text("Go to Bottom to Submit!"),
-            label: Text("Bottom"),
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            label: Text("Submit"),
+            backgroundColor: context.style.colorScheme.primaryContainer,
           ),
         ),
       );
@@ -191,8 +264,9 @@ class FilterWidgetState extends State<FilterWidget> {
               padding: EdgeInsets.all(context.style.spaceSmall),
               child: Column(
                 children: [
+                  selectAll(),
                   showTitleAndList("Category:", listCategories(), context),
-                  showTitleAndList("Tags:", listTags(), context),
+                  showTitleAndList("Tags:", listTagNTitle(), context),
                   submitFilters(context),
                 ] 
               )
