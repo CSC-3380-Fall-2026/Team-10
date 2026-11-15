@@ -34,16 +34,9 @@ void main() async {
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
-//   runHomePage();
+  runHomePage();
+  // runProfilePage();
   // runCalendar();
-
-  // runFilterTest();
-  // runSearchPage();
-  // runForgotPassword();
-  // runImageTest(); 
-  // runEventCreationForm();
-  // runHomePage();
-  runProfilePage();
 }
 
 //run app for login and signup page
@@ -133,20 +126,4 @@ void runCalendar() {
       home: Calendar(),
     ),
   );
-}
-void runFilterTest() {
-  void filters(List<String> selectedFilters) {}
-  runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: true,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
-      home: FilterWidget(
-            alreadySelected: const ["official"],
-            onFiltersSubmitted: filters,
-          ),
-        ),
-    );
 }

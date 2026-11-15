@@ -1,7 +1,7 @@
 class TagService {
   static const List<String> _tags = [
     'Academic',
-    'Professional Career Development',
+    'Career Development',
     'Social Justice',
     'Public Outreach/Community',
     'Faith and Spiritual',
@@ -37,7 +37,8 @@ class TagService {
     'The Outdoors and Nature',
     'Literature',
     'Technology and Engineering',
-    'Wellness and Health-Travel',
+    'Wellness and Health',
+    'Travel',
     'Study Group',
     'Internship',
     'College of Agriculture',
@@ -67,7 +68,94 @@ class TagService {
     'LSU Museums'
     ];
 
+  static const Map<String, List<String>> _categorizedTags = {
+    'Format': [
+      'Lecture',
+      'Meeting',
+      'Social',
+      'Workshop',
+      'Study Group',
+      'Fundraiser',
+      'University-ran Ceremony',
+      'Virtual',
+      'On Campus',
+      'Off Campus',
+    ],
+    'Audience':[
+      'For Undergraduate Students',
+      'For Graduate Students',
+      'For Online Students',
+    ],
+    'Academics and Career': [
+      'Academic',
+      'Career Development',
+      'Internship',
+    ],
+    'Arts and Hobbies': [
+      'Hobby',
+      'Visual Arts',
+      'Crafts and Artisan Trades',
+      'Performing Arts',
+      'Culinary Arts',
+      'Music',
+      'Collecting',
+      'Digital Gaming',
+      'Traditional/Analog/Physical Games',
+      'Technology and Engineering',
+      'Literature',
+      'Writing',
+    ],
+    'Sports, Outdoors, and Wellness': [
+      'Team Sport',
+      'Individual Sport',
+      'Physical Activity',
+      'The Outdoors and Nature',
+      'Travel',
+      'Wellness and Health',
+    ],
+    'Community, Culture, and Campus Involvement': [
+      'Social Justice',
+      'Public Outreach/Community',
+      'Faith and Spiritual',
+      'Cultural',
+      'Volunteer',
+      'Student Government',
+      'Greek Life',
+    ],
+    'College and Campus': [
+      'College of Agriculture',
+      'College of Art & Design',
+      'College of Business',
+      'College of Engineering',
+      'College of Human Sciences & Education',
+      'College of Humanities & Social Sciences',
+      'College of Music & Dramatic Arts',
+      'College of Science',
+      'College of the Coast & Environment',
+      'College of Veterinary Medicine',
+      'LSU Health Sciences NOLA',
+      'LSU Health Sciences Shreveport',
+      'LSU Paul M. Hebert Law Center',
+      'Manship School of Mass Communication',
+      'Pinkie Gordon Lane Graduate School',
+      'Roger Hadfield Ogden Honors College',
+      'University College',
+      'LSU Libraries',
+      'LSU Student Health Center',
+      'LSU Campus Life',
+      'LSU University Recreation (UREC)',
+      'LSU Office of Global Engagement',
+      'Clarence L. Barney Jr. African American Cultural Center (AACC)',
+      'LSU Women\'s Center',
+      'LSU Museums',
+    ], 
+  };
+
     List<String> fetchTags() {
     return _tags;
   }
+
+   Map<String, List<String>> fetchCatTags(){
+    return _categorizedTags;
+   }
 }
