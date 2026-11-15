@@ -382,3 +382,33 @@ them, the club still saves and the search update is skipped.
 **Testing:** `flutter run -t lib/dev/club_edit_test_main.dart -d emulator-5554`
 lets you pick a test user and open any club's editing page. User A (owner) and
 User B (admin) can edit User A's Club. User C (member) can't.
+
+
+
+## Creating a club
+
+The club creation page (`lib/pages/widgets/club_creation.dart`,
+`ClubCreateForm(currentUserId: ...)`) has the same fields as the club editing
+page and starts empty. It saves with
+`FirestoreService.createOrganization(club, owner)`, which in one step:
+- creates the club in `organizations/` (Firestore picks the ID)
+- makes the current user its owner (`ownerId`, `adminIds`, and
+  `organizations/{orgId}/members/{uid}` with role `owner`)
+- adds it to their "My Clubs" (`users/{uid}/memberships/{orgId}`)
+
+Logos and banners are compressed and uploaded with `ImageService`. The new
+club is also added to search (skipped if the Algolia keys aren't in `.env`).
+The page can't create the same club twice: the button locks while saving,
+and the form is replaced by a "created" message afterward.
+
+## Club form choices
+
+Both club pages use dropdowns for **category** and **meeting day**, a time
+picker for **meeting time** (saved like `6:00 PM`), and the same
+`TagService` list as events for **tags**. The category and day lists live in
+`lib/models/club_options.dart`. Add new categories there, and both pages
+update. If a club already has a value that isn't in the list (e.g. older
+typed tags), it stays selectable, so saving never drops it.
+
+**Testing:** `flutter run -t lib/dev/club_edit_test_main.dart -d emulator-5554`
+has a "Create a club" button plus the club editing list.
