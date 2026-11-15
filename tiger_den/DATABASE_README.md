@@ -412,3 +412,29 @@ typed tags), it stays selectable, so saving never drops it.
 
 **Testing:** `flutter run -t lib/dev/club_edit_test_main.dart -d emulator-5554`
 has a "Create a club" button plus the club editing list.
+
+
+
+## Calendar
+
+The calendar page (`lib/pages/widgets/calendar.dart`, `Calendar()`) shows the
+logged-in user's personal calendar (`users/{uid}/calendar`): events they
+RSVP'd "going" or "interested" to, plus personal entries. Each entry appears
+inside its day's square with a short time and title (e.g. "6p Mixer"), up to
+2 per day, then "+N more". All-day entries come first, and multi-day entries
+show on every day they cover. Today is outlined in purple.
+
+By default it shows whoever is logged in (`SessionService`). Pass
+`Calendar(currentUserId: ...)` to show a specific user.
+
+It keeps one live connection to the user's calendar
+(`FirestoreService.streamCalendar`), which only changes when a different user
+logs in. Switching months or redrawing doesn't re-read the database, and
+changes in Firestore show up automatically.
+
+Tapping a day doesn't do anything yet (showing that day's events below the
+calendar is a separate task).
+
+**Testing:** `flutter run -t lib/dev/calendar_test_main.dart -d emulator-5554`
+lets you pick a test user. Their events are in early October 2026, so tap <
+to go back.
