@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firestore_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -13,6 +14,8 @@ class ImageService {
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   ///User local directory used to temporarily store images for compression
   late Directory imageDir;
+  ///Holds pre-made functions used to fetch things from our database
+  FirestoreService fireService = FirestoreService();
 
 
   ///Disposes what is left over after using
@@ -82,4 +85,28 @@ class ImageService {
         return null;
       }
   }
+   ///Gets the image url from events
+  Future<String> getEventImageURL(String id) async {
+    try {
+      final ev = fireService.getEvent(id);
+      final event = await ev;
+      return event!.imageUrl!;
+    } catch (e){
+      print("error: failure to grab event image url;");
+      return "";
+    }
+  }
+  ///Gets the image url from clubs
+  Future<String> getClubImageURL(String id) async {
+    try {
+      final cl = fireService.getOrganization(id);
+      final club = await cl;
+      return club!.bannerUrl!;
+    } catch (e){
+      print("error: failure to grab club image url;");
+      return "";
+    }
+  }
+
+
 }
