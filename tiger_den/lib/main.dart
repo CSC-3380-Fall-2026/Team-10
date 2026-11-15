@@ -12,6 +12,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/widgets/home_page.dart';
 import '/pages/widgets/forgot_passoword_page.dart';
 import 'pages/widgets/calendar.dart';
+import 'pages/entire_screen/search_page.dart';
+import 'pages/widgets/filter_widget.dart';
+import 'pages/widgets/profile_page.dart';
+// import 'page'
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +35,7 @@ void main() async {
   // runImageTest(); 
   // runEventCreationForm();
   runHomePage();
+  // runProfilePage();
   // runCalendar();
 }
 
@@ -83,6 +89,32 @@ void runHomePage() {
         child: child!,
       ),
       home: const HomePage(),
+    ),
+  );
+}
+
+//Launches directly to profile page, but page should also be accessible from runHomePage()
+void runProfilePage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: const ProfilePage(),
+    ),
+  );
+}
+void runSearchPage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: SearchPage(),
     ),
   );
 }
