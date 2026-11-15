@@ -14,6 +14,7 @@ import '/pages/widgets/forgot_passoword_page.dart';
 import 'pages/widgets/calendar.dart';
 import 'pages/entire_screen/search_page.dart';
 import 'pages/widgets/filter_widget.dart';
+import 'pages/widgets/profile_page.dart';
 // import 'page'
 
 
@@ -37,12 +38,12 @@ void main() async {
   // runCalendar();
 
   // runFilterTest();
-  runSearchPage();
+  // runSearchPage();
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
   // runHomePage();
-
+  runProfilePage();
 }
 
 //run app for login and signup page
@@ -99,6 +100,19 @@ void runHomePage() {
   );
 }
 
+//Launches directly to profile page, but page should also be accessible from runHomePage()
+void runProfilePage() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: true,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: const ProfilePage(),
+    ),
+  );
+}
 void runSearchPage() {
   runApp(
     MaterialApp(

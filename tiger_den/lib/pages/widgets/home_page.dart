@@ -3,9 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/auth_service.dart';
+import 'calendar.dart';
+import 'profile_page.dart';
 
 // Home Page for Tiger Den App
-// TODO: Hook in pulling images/names from database, add in navigation
+// TODO: Hook in pulling images/names from database
 
 // Event Info class for slideshow
 class EventInfo {
@@ -88,7 +90,16 @@ class _HomePageState extends State<HomePage> {
                     child: Stack(
                       children: [
                         SizedBox.expand(
-                          child: Image.asset(event.imagePath, fit: BoxFit.cover),
+                          child: Image.asset(
+                            event.imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.purple.shade300,
+                              child: const Center(
+                                child: Icon(Icons.event, color: Colors.white, size: 48),
+                              ),
+                            ),
+                          ),
                         ),
                         // Dark overlay gradient mask
                         Positioned.fill(
@@ -173,6 +184,7 @@ class _HomePageState extends State<HomePage> {
               child: SizedBox(
                 height: carouselHeight,
                 child: CarouselSlider(
+                  carouselController: _clubController,
                   options: CarouselOptions(
                     viewportFraction: 0.9,
                     enlargeCenterPage: true,
@@ -186,7 +198,16 @@ class _HomePageState extends State<HomePage> {
                       child: Stack(
                         children: [
                           SizedBox.expand(
-                            child: Image.asset(club.imagePath, fit: BoxFit.cover),
+                          child: Image.asset(
+                            club.imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.purple.shade300,
+                              child: const Center(
+                                child: Icon(Icons.groups, color: Colors.white, size: 48),
+                              ),
+                            ),
+                          ),
                           ),
                           Positioned.fill(
                             child: DecoratedBox(
@@ -203,41 +224,41 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           Positioned(
-                          bottom: 12.0,
-                          left: 12.0,
-                          right: 12.0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  club.clubName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.bold,
+                            bottom: 12.0,
+                            left: 12.0,
+                            right: 12.0,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    club.clubName,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16.0,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              GestureDetector(
-                                onTap: () => setState(
-                                  () => _isEventPlaying = !_isEventPlaying,
+                                GestureDetector(
+                                  onTap: () => setState(
+                                    () => _isClubPlaying = !_isClubPlaying,
+                                  ),
+                                  child: Icon(
+                                    _isClubPlaying
+                                        ? Icons.pause_circle_filled
+                                        : Icons.play_circle_filled,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
                                 ),
-                                child: Icon(
-                                  _isEventPlaying
-                                      ? Icons.pause_circle_filled
-                                      : Icons.play_circle_filled,
-                                  color: Colors.white,
-                                  size: 28,
-                                )
-                              )
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                    )
-                ]
-            )
-        );
+                    );
                   }).toList(),
                 ),
               ),
@@ -250,7 +271,7 @@ class _HomePageState extends State<HomePage> {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => _currentMenuIndex = index),
+        onTap: _onBottomNavTapped,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendar'),
@@ -259,6 +280,34 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+//Working navigation bar, should allow user to switch between home page and profile easily. 
+//Calendar also accessible, but the navbar code needs to be added to page.
+//TODO: look into how to change the transition between pages to something more smooth
+
+  void _onBottomNavTapped(int index) {
+    if (index == _currentMenuIndex) return;
+
+    if (index == 2) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const ProfilePage()),
+      ).then((_) {
+        if (mounted) {
+          setState(() => _currentMenuIndex = 0);
+        }
+      });
+    } else if (index == 1) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const Calendar()),
+      ).then((_) {
+        if (mounted) {
+          setState(() => _currentMenuIndex = 0);
+        }
+      });
+    } else {
+      setState(() => _currentMenuIndex = index);
+    }
   }
 
   // Placeholder menu button widget
