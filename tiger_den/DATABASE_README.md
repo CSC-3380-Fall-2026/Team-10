@@ -438,3 +438,31 @@ calendar is a separate task).
 **Testing:** `flutter run -t lib/dev/calendar_test_main.dart -d emulator-5554`
 lets you pick a test user. Their events are in early October 2026, so tap <
 to go back.
+
+
+
+## Profile page
+
+The profile page (`lib/pages/widgets/profile_page.dart`, `ProfilePage()`)
+shows the logged-in user's profile from `CurrentUserService` and updates as
+soon as it loads. It shows a spinner while loading and "Log in to see your
+profile" when logged out.
+
+- **Clubs:** the user's memberships (`users/{uid}/memberships`), labeled
+  Owner / Admin / Pending. Tapping a club opens `ClubEditForm` for owners and
+  admins, a "Leave club" option for members, or "Cancel join request" for
+  pending ones (both use `leaveOrganization` after an "Are you sure?").
+- **Events:** events the user created (`streamEventsCreatedBy`), with dates.
+  Tapping one opens `EventEditForm`.
+- **Sign Out** logs out of Firebase.
+
+Each list keeps one database connection per user instead of reconnecting on
+every redraw.
+
+Pass `ProfilePage(currentUserId: ...)` to show a specific user's profile
+(used for testing). The `initialUser` / `initialClubs` / `initialEvents`
+parameters still show fixed data without the database.
+
+**Testing:** `flutter run -t lib/dev/profile_test_main.dart -d emulator-5554`
+opens the profile as any test user (A owner, B admin, C member, D pending,
+E no clubs) or the logged-in user.
