@@ -7,8 +7,7 @@ import '../../models/organization.dart';
 import '../../services/auth_service.dart';
 import '../../services/current_user_service.dart';
 import '../../services/firestore_service.dart';
-import 'calendar.dart';
-import 'home_page.dart';
+import '../entire_screen/navigation_bar.dart';
 
 /// Profile Page for Tiger Den, based off wireframes
 /// TODO: Ensure full firebase integration, find out a way to fix transition between pages
@@ -55,7 +54,6 @@ class _ProfilePageState extends State<ProfilePage> {
       return null;
     }
   }
-  int _currentMenuIndex = 2; // Profile is the 3rd item (index 2)
   bool _signedOut = false;
 
   // Fallback data matching the wireframe mockups
@@ -161,28 +159,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
         widget.onSignOut?.call();
       }
-    }
-  }
-
-  void _onBottomNavTapped(int index) {
-    if (index == _currentMenuIndex) return;
-
-    if (index == 0) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      }
-    } else if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const Calendar()),
-      );
-    } else if (index == 2) {
-      setState(() => _currentMenuIndex = 2);
-    } else if (index == 3) {
-      setState(() => _currentMenuIndex = index);
     }
   }
 
@@ -353,19 +329,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentMenuIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onBottomNavTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(currentIndex: 2),
     );
   }
 
