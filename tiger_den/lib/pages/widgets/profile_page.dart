@@ -8,10 +8,9 @@ import '../../models/organization.dart';
 import '../../services/auth_service.dart';
 import '../../services/current_user_service.dart';
 import '../../services/firestore_service.dart';
-import 'calendar.dart';
+import '../entire_screen/navigation_bar.dart';
 import 'club_Editing.dart';
 import 'event_editing.dart';
-import 'home_page.dart';
 
 /// Profile Page for Tiger Den, based off wireframes.
 ///
@@ -73,8 +72,6 @@ class _ProfilePageState extends State<ProfilePage> {
       return null;
     }
   }
-
-  int _currentMenuIndex = 2; // Profile is the 3rd item (index 2)
   bool _signedOut = false;
 
   /// The logged-in user's profile service (null if Firebase isn't set up,
@@ -207,9 +204,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // Club and event buttons
-  // ---------------------------------------------------------------------------
 
   /// Opens [form] full-screen with a back arrow
   void _openPage(String title, Widget form) {
@@ -302,45 +297,13 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  /// The events listed here were created by the user, so they can edit them.
+  /// Opens the edit form for an event created by the user.
   void _onEventTapped(AppUser user, Event event) {
     _openPage(
       'Edit: ${event.title}',
       EventEditForm(eventId: event.id, currentUserId: user.id),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Navigation
-  // ---------------------------------------------------------------------------
-
-  void _onBottomNavTapped(int index) {
-    if (index == _currentMenuIndex) return;
-
-    if (index == 0) {
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute<void>(
-              builder: (BuildContext context) => const HomePage()),
-        );
-      }
-    } else if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute<void>(
-            builder: (BuildContext context) => const Calendar()),
-      );
-    } else if (index == 2) {
-      setState(() => _currentMenuIndex = 2);
-    } else if (index == 3) {
-      setState(() => _currentMenuIndex = index);
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -388,21 +351,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Tiger Den Profile'),
       ),
       body: body,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentMenuIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onBottomNavTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(currentIndex: 2),
     );
   }
 
