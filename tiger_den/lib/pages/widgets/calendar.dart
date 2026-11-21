@@ -4,6 +4,7 @@ import '../../base_designs/sitewide/design_main.dart';
 import '../../models/calendar_entry.dart';
 import '../../services/firestore_service.dart';
 import '../../services/session_service.dart';
+import '../entire_screen/navigation_bar.dart';
 
 /// The logged-in user's personal calendar: a month grid showing their
 /// calendar entries (events they RSVP'd "going"/"interested" to, plus
@@ -363,6 +364,7 @@ class CalendarState extends State<Calendar> {
           ),
         ),
       ),
+      bottomNavigationBar: const AppNavigationBar(currentIndex: 1),
     );
   }
 }
