@@ -1,4 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../models/app_user.dart';
@@ -8,10 +9,23 @@ import '../../services/auth_service.dart';
 import '../../services/current_user_service.dart';
 import '../../services/firestore_service.dart';
 import 'calendar.dart';
+import 'club_Editing.dart';
+import 'event_editing.dart';
 import 'home_page.dart';
 
-/// Profile Page for Tiger Den, based off wireframes
-/// TODO: Ensure full firebase integration, find out a way to fix transition between pages
+/// Profile Page for Tiger Den, based off wireframes.
+///
+/// Shows the logged-in user's profile (from CurrentUserService), their clubs,
+/// and the events they created, all loaded live from Firestore.
+///   - Tap a club you own/admin to edit it; tap any other club to leave it
+///     (or cancel a pending join request).
+///   - Tap an event to edit it.
+///   - Sign Out logs out of Firebase.
+///
+/// Pass [currentUserId] to show a specific user's profile instead of the
+/// logged-in user (used by lib/dev/profile_test_main.dart). The initialX
+/// parameters show fixed data with no database (for previews and tests).
+/// TODO: find out a way to fix transition between pages
 class ProfilePage extends StatefulWidget {
   final AppUser? initialUser;
   final List<String>? initialClubs;
@@ -19,6 +33,9 @@ class ProfilePage extends StatefulWidget {
   final AuthService? authService;
   final FirestoreService? firestoreService;
   final VoidCallback? onSignOut;
+
+  /// Whose profile to show. Null = the logged-in user.
+  final String? currentUserId;
 
   const ProfilePage({
     super.key,
@@ -28,6 +45,7 @@ class ProfilePage extends StatefulWidget {
     this.authService,
     this.firestoreService,
     this.onSignOut,
+    this.currentUserId,
   });
 
   @override
@@ -55,53 +73,102 @@ class _ProfilePageState extends State<ProfilePage> {
       return null;
     }
   }
+
   int _currentMenuIndex = 2; // Profile is the 3rd item (index 2)
   bool _signedOut = false;
 
-  // Fallback data matching the wireframe mockups
-  static const List<String> _fallbackClubs = [
-    'Tiger Photography Guild',
-    'LSU Chess & Strategy Group',
-    'Rec Outdoor Adventure Club',
-  ];
+  /// The logged-in user's profile service (null if Firebase isn't set up,
+  /// e.g. in widget tests).
+  CurrentUserService? _currentUserService;
 
-  static const List<String> _fallbackEvents = [
-    'Mike Watch 2k26',
-    'Homecoming Tailgate Bash',
-    'Intramural Championship Match',
-  ];
+  /// Live profile for [ProfilePage.currentUserId] (test/preview mode only)
+  Stream<AppUser?>? _userStream;
 
-  AppUser? _getCurrentUser() {
-    if (_signedOut) return null;
-    if (widget.initialUser != null) return widget.initialUser;
-    try {
-      return CurrentUserService.instance.user;
-    } catch (_) {
-      return null;
+  /// The user whose clubs/events streams are open. The streams are only
+  /// replaced when this changes, NOT on every redraw, so the page doesn't
+  /// keep re-reading the database.
+  String? _streamsUid;
+  Stream<List<Membership>>? _membershipsStream;
+  Stream<List<Event>>? _eventsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final String? fixedUid = widget.currentUserId;
+    if (fixedUid != null) {
+      _userStream = _getFirestoreService()?.streamUser(fixedUid);
+    } else if (widget.initialUser == null) {
+      try {
+        _currentUserService = CurrentUserService.instance;
+      } catch (_) {
+        _currentUserService = null;
+      }
     }
+  }
+
+  /// Opens the clubs/events streams for [uid], once per user
+  void _connectListsFor(String uid) {
+    if (_streamsUid == uid) return;
+    final FirestoreService? fs = _getFirestoreService();
+    _streamsUid = uid;
+    _membershipsStream = fs?.streamMyMemberships(uid);
+    _eventsStream = fs?.streamEventsCreatedBy(uid);
+  }
+
+  void _showMessage(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text), backgroundColor: Colors.purple),
+    );
   }
 
   // Sign-out prompt
 
   Future<void> _handleSignOut() async {
-    final bool? shouldSignOut = await showDialog<bool>(
+    final bool? shouldSignOut = await _confirm(
+      'Are you sure you want to sign out?',
+    );
+
+    if (shouldSignOut == true) {
+      try {
+        final AuthService? auth = _getAuthService();
+        if (auth != null) {
+          await auth.logOut();
+        }
+      } catch (e) {
+        debugPrint('Sign out notice: $e');
+      }
+
+      if (mounted) {
+        setState(() {
+          _signedOut = true;
+        });
+        _showMessage('Signed out successfully.');
+        widget.onSignOut?.call();
+      }
+    }
+  }
+
+  /// A Yes/No dialog in the same style as the sign-out prompt
+  Future<bool?> _confirm(String question) {
+    return showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16.0),
           ),
-          title: const Text(
-            'Are you sure you want to sign out?',
+          title: Text(
+            question,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18.0,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
           actionsAlignment: MainAxisAlignment.spaceEvenly,
-          actions: [
+          actions: <Widget>[
             OutlinedButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               style: OutlinedButton.styleFrom(
@@ -110,7 +177,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               ),
               child: const Text(
                 'No',
@@ -125,7 +193,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               ),
               child: const Text(
                 'Yes',
@@ -136,33 +205,114 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       },
     );
+  }
 
-    if (shouldSignOut == true) {
-      try {
-        final auth = _getAuthService();
-        if (auth != null) {
-          await auth.logOut();
-        }
-      } catch (e) {
-        debugPrint('Sign out notice: $e');
-      }
+  // ---------------------------------------------------------------------------
+  // Club and event buttons
+  // ---------------------------------------------------------------------------
 
-      if (mounted) {
-        setState(() {
-          _signedOut = true;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Signed out successfully.'),
-            backgroundColor: Colors.purple,
+  /// Opens [form] full-screen with a back arrow
+  void _openPage(String title, Widget form) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) => Scaffold(
+          appBar: AppBar(title: Text(title)),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: form,
+            ),
           ),
-        );
+        ),
+      ),
+    );
+  }
 
-        widget.onSignOut?.call();
-      }
+  /// Owners/admins edit the club; members can leave; pending can cancel.
+  Future<void> _onClubTapped(AppUser user, Membership membership) async {
+    final bool isPending = membership.status == MemberStatus.pending;
+    final bool canEdit = !isPending &&
+        (membership.role == OrgRole.owner || membership.role == OrgRole.admin);
+
+    if (canEdit) {
+      _openPage(
+        'Edit: ${membership.orgName}',
+        ClubEditForm(orgId: membership.orgId, currentUserId: user.id),
+      );
+      return;
+    }
+
+    final String action = isPending ? 'Cancel join request' : 'Leave club';
+    final bool? chosen = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Text(
+                membership.orgName,
+                style: const TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4.0),
+              Text(
+                isPending
+                    ? 'Your request to join is waiting for approval.'
+                    : 'You are a member of this club.',
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 16.0),
+              OutlinedButton(
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                  side: BorderSide(color: Colors.red.shade700, width: 1.5),
+                ),
+                child: Text(action),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (chosen != true || !mounted) return;
+
+    final bool? confirmed = await _confirm(
+      isPending
+          ? 'Cancel your request to join ${membership.orgName}?'
+          : 'Leave ${membership.orgName}?',
+    );
+    if (confirmed != true) return;
+
+    final FirestoreService? fs = _getFirestoreService();
+    if (fs == null) return;
+    try {
+      await fs.leaveOrganization(membership.orgId, user.id);
+      _showMessage(isPending
+          ? 'Join request cancelled.'
+          : 'You left ${membership.orgName}.');
+    } catch (e) {
+      _showMessage('Could not leave the club: $e');
     }
   }
+
+  /// The events listed here were created by the user, so they can edit them.
+  void _onEventTapped(AppUser user, Event event) {
+    _openPage(
+      'Edit: ${event.title}',
+      EventEditForm(eventId: event.id, currentUserId: user.id),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Navigation
+  // ---------------------------------------------------------------------------
 
   void _onBottomNavTapped(int index) {
     if (index == _currentMenuIndex) return;
@@ -172,12 +322,14 @@ class _ProfilePageState extends State<ProfilePage> {
         Navigator.of(context).pop();
       } else {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute<void>(
+              builder: (BuildContext context) => const HomePage()),
         );
       }
     } else if (index == 1) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const Calendar()),
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => const Calendar()),
       );
     } else if (index == 2) {
       setState(() => _currentMenuIndex = 2);
@@ -186,25 +338,48 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Build
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
-    final user = _getCurrentUser();
-
-    final String username = user?.username.isNotEmpty == true
-        ? '@${user!.username}'
-        : '@tiger_den';
-
-    final String displayName = user?.displayName.isNotEmpty == true
-        ? user!.displayName
-        : (user != null && ('${user.firstName} ${user.lastName}'.trim().isNotEmpty)
-            ? '${user.firstName} ${user.lastName}'.trim()
-            : 'Mike the Tiger');
-
-    final String bio = user?.bio.isNotEmpty == true
-        ? user!.bio
-        : 'Sophmore in Computer Science. Interested in Software Engineering, Robotics, and more events around campus!';
-
-    final String? photoUrl = user?.profilePhotoUrl;
+    final Widget body;
+    if (_signedOut) {
+      body = _buildMessage('You are signed out.');
+    } else if (widget.initialUser != null) {
+      body = _buildProfile(widget.initialUser!);
+    } else if (_userStream != null) {
+      body = StreamBuilder<AppUser?>(
+        stream: _userStream,
+        builder: (BuildContext context, AsyncSnapshot<AppUser?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final AppUser? user = snapshot.data;
+          return user == null
+              ? _buildMessage('This profile could not be found.')
+              : _buildProfile(user);
+        },
+      );
+    } else if (_currentUserService != null) {
+      final CurrentUserService me = _currentUserService!;
+      body = ListenableBuilder(
+        listenable: me,
+        builder: (BuildContext context, Widget? child) {
+          if (me.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final AppUser? user = me.user;
+          if (user != null) return _buildProfile(user);
+          return _buildMessage(me.uid == null
+              ? 'Log in to see your profile.'
+              : 'Your profile could not be found.');
+        },
+      );
+    } else {
+      body = _buildMessage('Log in to see your profile.');
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -212,158 +387,189 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: Colors.grey,
         title: const Text('Tiger Den Profile'),
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User Header (Slide 5: Avatar on left, Username and Name on right)
-            Row(
-              children: [
-                _buildAvatar(photoUrl, displayName),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        username,
-                        style: const TextStyle(
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4.0),
-                      Text(
-                        displayName,
-                        style: TextStyle(
-                          fontSize: 15.0,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20.0),
-
-            // Bio Section (Slide 5: Bordered container for Bio)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.0),
-                border: Border.all(color: Colors.grey.shade300, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Bio',
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple,
-                    ),
-                  ),
-                  const SizedBox(height: 8.0),
-                  Text(
-                    bio,
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.grey.shade800,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24.0),
-
-            // Clubs Section (Slides 5 & 6)
-            const Text(
-              'Clubs',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 12.0),
-            _buildClubsList(user),
-
-            const SizedBox(height: 24.0),
-
-            // Events Section (Slide 6)
-            const Text(
-              'Events',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 12.0),
-            _buildEventsList(user),
-
-            const SizedBox(height: 32.0),
-
-            // Sign Out Button (Slide 6)
-            SizedBox(
-              width: double.infinity,
-              height: 48.0,
-              child: ElevatedButton(
-                onPressed: _handleSignOut,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                child: const Text(
-                  'Sign Out',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16.0),
-          ],
-        ),
-      ),
+      body: body,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentMenuIndex,
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
         onTap: _onBottomNavTapped,
-        items: const [
+        items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_month), label: 'Calendar'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded), label: 'Profile'),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessage(String text) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 16.0, color: Colors.grey.shade700),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfile(AppUser user) {
+    final String username =
+        user.username.isNotEmpty ? '@${user.username}' : user.email;
+
+    final String fullName = '${user.firstName} ${user.lastName}'.trim();
+    final String displayName = user.displayName.isNotEmpty
+        ? user.displayName
+        : (fullName.isNotEmpty ? fullName : user.email);
+
+    final String bio = user.bio.isNotEmpty ? user.bio : 'No bio yet.';
+
+    final String? photoUrl = user.profilePhotoUrl;
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          // User Header (Slide 5: Avatar on left, Username and Name on right)
+          Row(
+            children: <Widget>[
+              _buildAvatar(photoUrl, displayName),
+              const SizedBox(width: 16.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      username,
+                      style: const TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4.0),
+                    Text(
+                      displayName,
+                      style: TextStyle(
+                        fontSize: 15.0,
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20.0),
+
+          // Bio Section (Slide 5: Bordered container for Bio)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: Colors.grey.shade300, width: 1.5),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text(
+                  'Bio',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple,
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                Text(
+                  bio,
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    color: Colors.grey.shade800,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24.0),
+
+          // Clubs Section (Slides 5 & 6)
+          const Text(
+            'Clubs',
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          _buildClubsList(user),
+
+          const SizedBox(height: 24.0),
+
+          // Events Section (Slide 6)
+          const Text(
+            'Events',
+            style: TextStyle(
+              fontSize: 18.0,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          _buildEventsList(user),
+
+          const SizedBox(height: 32.0),
+
+          // Sign Out Button (Slide 6)
+          SizedBox(
+            width: double.infinity,
+            height: 48.0,
+            child: ElevatedButton(
+              onPressed: _handleSignOut,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+              child: const Text(
+                'Sign Out',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16.0),
         ],
       ),
     );
@@ -384,7 +590,9 @@ class _ProfilePageState extends State<ProfilePage> {
             ? Image.network(
                 photoUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _avatarFallback(displayName),
+                errorBuilder:
+                    (BuildContext context, Object error, StackTrace? stack) =>
+                        _avatarFallback(displayName),
               )
             : _avatarFallback(displayName),
       ),
@@ -396,7 +604,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: displayName.isNotEmpty
           ? Text(
               displayName[0].toUpperCase(),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 28.0,
                 fontWeight: FontWeight.bold,
                 color: AppColors.purple,
@@ -410,167 +618,244 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildClubsList(AppUser? user) {
+  // ---------------------------------------------------------------------------
+  // Clubs and events lists
+  // ---------------------------------------------------------------------------
+
+  Widget _buildClubsList(AppUser user) {
     if (widget.initialClubs != null) {
-      return _buildClubCards(widget.initialClubs!);
-    }
-
-    final fs = _getFirestoreService();
-    if (user != null && !_signedOut && fs != null) {
-      return StreamBuilder<List<Membership>>(
-        stream: fs.streamMyMemberships(user.id),
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            final names = snapshot.data!.map((m) => m.orgName).toList();
-            return _buildClubCards(names);
-          }
-          return _buildClubCards(_fallbackClubs);
-        },
+      return _buildCards(
+        <_CardData>[
+          for (final String name in widget.initialClubs!)
+            _CardData(title: name),
+        ],
+        icon: Icons.groups_rounded,
+        emptyText: 'No clubs joined yet.',
       );
     }
 
-    return _buildClubCards(_fallbackClubs);
-  }
+    _connectListsFor(user.id);
+    final Stream<List<Membership>>? stream = _membershipsStream;
+    if (stream == null) return _buildListMessage('No clubs joined yet.');
 
-  Widget _buildClubCards(List<String> clubs) {
-    if (clubs.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.0),
-        child: Text('No clubs joined yet.', style: TextStyle(color: Colors.grey)),
-      );
-    }
-
-    return Column(
-      children: clubs.map((club) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10.0),
-          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(color: Colors.grey.shade300),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+    return StreamBuilder<List<Membership>>(
+      stream: stream,
+      builder: (BuildContext context,
+          AsyncSnapshot<List<Membership>> snapshot) {
+        if (snapshot.hasError) {
+          return _buildListMessage('Could not load clubs.');
+        }
+        if (!snapshot.hasData) return _buildListLoading();
+        final List<Membership> memberships =
+            List<Membership>.from(snapshot.data!)
+              ..sort((Membership a, Membership b) =>
+                  a.orgName.toLowerCase().compareTo(b.orgName.toLowerCase()));
+        return _buildCards(
+          <_CardData>[
+            for (final Membership m in memberships)
+              _CardData(
+                title: m.orgName,
+                tag: _clubTag(m),
+                onTap: () => _onClubTapped(user, m),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34.0,
-                height: 34.0,
-                decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: const Icon(
-                  Icons.groups_rounded,
-                  color: Colors.purple,
-                  size: 20.0,
-                ),
-              ),
-              const SizedBox(width: 12.0),
-              Expanded(
-                child: Text(
-                  club,
-                  style: const TextStyle(
-                    fontSize: 15.0,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20.0),
-            ],
-          ),
+          ],
+          icon: Icons.groups_rounded,
+          emptyText: 'No clubs joined yet.',
         );
-      }).toList(),
+      },
     );
   }
 
-  Widget _buildEventsList(AppUser? user) {
+  /// "Owner" / "Admin" / "Pending", or null for regular members
+  String? _clubTag(Membership membership) {
+    if (membership.status == MemberStatus.pending) return 'Pending';
+    if (membership.role == OrgRole.owner) return 'Owner';
+    if (membership.role == OrgRole.admin) return 'Admin';
+    return null;
+  }
+
+  Widget _buildEventsList(AppUser user) {
     if (widget.initialEvents != null) {
-      return _buildEventCards(widget.initialEvents!);
-    }
-
-    final fs = _getFirestoreService();
-    if (user != null && !_signedOut && fs != null) {
-      return StreamBuilder<List<Event>>(
-        stream: fs.streamEventsCreatedBy(user.id),
-        builder: (context, snapshot) {
-          if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-            final names = snapshot.data!.map((e) => e.title).toList();
-            return _buildEventCards(names);
-          }
-          return _buildEventCards(_fallbackEvents);
-        },
+      return _buildCards(
+        <_CardData>[
+          for (final String title in widget.initialEvents!)
+            _CardData(title: title),
+        ],
+        icon: Icons.event_rounded,
+        emptyText: 'No events yet.',
       );
     }
 
-    return _buildEventCards(_fallbackEvents);
-  }
+    _connectListsFor(user.id);
+    final Stream<List<Event>>? stream = _eventsStream;
+    if (stream == null) return _buildListMessage('No events yet.');
 
-  Widget _buildEventCards(List<String> events) {
-    if (events.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8.0),
-        child: Text('No events yet.', style: TextStyle(color: Colors.grey)),
-      );
-    }
-
-    return Column(
-      children: events.map((event) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10.0),
-          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 12.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(color: Colors.grey.shade300),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+    return StreamBuilder<List<Event>>(
+      stream: stream,
+      builder: (BuildContext context, AsyncSnapshot<List<Event>> snapshot) {
+        if (snapshot.hasError) {
+          return _buildListMessage('Could not load events.');
+        }
+        if (!snapshot.hasData) return _buildListLoading();
+        return _buildCards(
+          <_CardData>[
+            for (final Event e in snapshot.data!)
+              _CardData(
+                title: e.title,
+                subtitle: _formatDate(e.startTime),
+                tag: e.status == EventStatus.cancelled ? 'Cancelled' : null,
+                onTap: () => _onEventTapped(user, e),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34.0,
-                height: 34.0,
-                decoration: BoxDecoration(
-                  color: Colors.purple.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: const Icon(
-                  Icons.event_rounded,
-                  color: Colors.purple,
-                  size: 20.0,
-                ),
-              ),
-              const SizedBox(width: 12.0),
-              Expanded(
-                child: Text(
-                  event,
-                  style: const TextStyle(
-                    fontSize: 15.0,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20.0),
-            ],
-          ),
+          ],
+          icon: Icons.event_rounded,
+          emptyText: 'No events yet.',
         );
-      }).toList(),
+      },
     );
   }
+
+  String _formatDate(DateTime date) {
+    const List<String> months = <String>[
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final int hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final String minute = date.minute.toString().padLeft(2, '0');
+    final String period = date.hour < 12 ? 'AM' : 'PM';
+    return '${months[date.month - 1]} ${date.day}, ${date.year} · '
+        '$hour:$minute $period';
+  }
+
+  Widget _buildListLoading() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.0),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildListMessage(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(text, style: const TextStyle(color: Colors.grey)),
+    );
+  }
+
+  /// The club/event cards (same look as the skeleton), now tappable
+  Widget _buildCards(
+    List<_CardData> cards, {
+    required IconData icon,
+    required String emptyText,
+  }) {
+    if (cards.isEmpty) return _buildListMessage(emptyText);
+
+    return Column(
+      children: <Widget>[
+        for (final _CardData card in cards)
+          Container(
+            margin: const EdgeInsets.only(bottom: 10.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(color: Colors.grey.shade300),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12.0),
+                onTap: card.onTap,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14.0, vertical: 12.0),
+                  child: Row(
+                    children: <Widget>[
+                      Container(
+                        width: 34.0,
+                        height: 34.0,
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: Colors.purple,
+                          size: 20.0,
+                        ),
+                      ),
+                      const SizedBox(width: 12.0),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              card.title,
+                              style: const TextStyle(
+                                fontSize: 15.0,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (card.subtitle != null)
+                              Text(
+                                card.subtitle!,
+                                style: TextStyle(
+                                  fontSize: 12.0,
+                                  color: Colors.grey.shade600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (card.tag != null)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8.0),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 2.0),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            card.tag!,
+                            style: const TextStyle(
+                              fontSize: 11.0,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.purple,
+                            ),
+                          ),
+                        ),
+                      Icon(Icons.chevron_right,
+                          color: Colors.grey.shade400, size: 20.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// What one club/event card shows, and what tapping it does
+class _CardData {
+  const _CardData({
+    required this.title,
+    this.subtitle,
+    this.tag,
+    this.onTap,
+  });
+
+  final String title;
+  final String? subtitle;
+  final String? tag;
+  final FutureOr<void> Function()? onTap;
 }
