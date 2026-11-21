@@ -127,3 +127,46 @@ void runCalendar() {
     ),
   );
 }
+
+//Page switcher that should work to switch between the pages easier, use openPage("page_name") in main to open any page.
+void openPage(String pageName) {
+  Widget page;
+  switch (pageName) {
+    case 'login':
+      page = const LoginPage();
+      break;
+    case 'forgot_password':
+      page = const ForgotPasswordPage();
+      break;
+    case 'profile':
+      page = const ProfilePage();
+      break;
+    case 'search':
+      page = const SearchPage();
+      break;
+    case 'calendar':
+      page = const Calendar();
+      break;
+    case 'create_event':
+      page = const Scaffold(
+        body: SafeArea(
+          child: EventCreationForm(currentUserId: 'test_user_a'),
+        ),
+      );
+      break;
+    case 'home':
+    default:
+      page = const HomePage();
+      break;
+  }
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) => Theme(
+        data: context.style.theme,
+        child: child!,
+      ),
+      home: page,
+    ),
+  );
+}
