@@ -9,6 +9,8 @@ import '../../services/auth_service.dart';
 import '../../services/current_user_service.dart';
 import '../../services/firestore_service.dart';
 import '../entire_screen/navigation_bar.dart';
+import 'club_Editing.dart';
+import 'event_editing.dart';
 
 /// Profile Page for Tiger Den, based off wireframes.
 ///
@@ -295,6 +297,14 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  /// Opens the edit form for an event created by the user.
+  void _onEventTapped(AppUser user, Event event) {
+    _openPage(
+      'Edit: ${event.title}',
+      EventEditForm(eventId: event.id, currentUserId: user.id),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final Widget body;
@@ -341,21 +351,7 @@ class _ProfilePageState extends State<ProfilePage> {
         title: const Text('Tiger Den Profile'),
       ),
       body: body,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentMenuIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onBottomNavTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_rounded), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(currentIndex: 2),
     );
   }
 
@@ -522,11 +518,9 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-            const SizedBox(height: 16.0),
-          ],
-        ),
+          const SizedBox(height: 16.0),
+        ],
       ),
-      bottomNavigationBar: const AppNavigationBar(currentIndex: 2),
     );
   }
 
