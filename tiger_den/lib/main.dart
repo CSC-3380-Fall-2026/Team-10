@@ -15,6 +15,7 @@ import 'pages/widgets/calendar.dart';
 import 'pages/entire_screen/search_page.dart';
 import 'pages/widgets/filter_widget.dart';
 import 'pages/widgets/profile_page.dart';
+
 // import 'page'
 
 
@@ -34,9 +35,10 @@ void main() async {
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
-  runHomePage();
+  // runHomePage();
   // runProfilePage();
-  // runCalendar();
+  runCalendarW();
+
 }
 
 //run app for login and signup page
@@ -119,7 +121,7 @@ void runSearchPage() {
   );
 }
   
-void runCalendar() {
+void runCalendarW() {
   runApp(
     const MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -127,3 +129,4 @@ void runCalendar() {
     ),
   );
 }
+
