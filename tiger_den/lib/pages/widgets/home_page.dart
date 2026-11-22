@@ -3,8 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/auth_service.dart';
-import 'calendar.dart';
-import 'profile_page.dart';
+import '../entire_screen/navigation_bar.dart';
 
 // Home Page for Tiger Den App
 // TODO: Hook in pulling images/names from database
@@ -39,7 +38,6 @@ class _HomePageState extends State<HomePage> {
   final CarouselSliderController _clubController = CarouselSliderController();
   bool _isEventPlaying = true;
   bool _isClubPlaying = true;
-  int _currentMenuIndex = 0;
 
   // Placeholder hardcoded collections
   final List<EventInfo> _events = [
@@ -266,48 +264,8 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentMenuIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onBottomNavTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(currentIndex: 0),
     );
-  }
-
-//Working navigation bar, should allow user to switch between home page and profile easily. 
-//Calendar also accessible, but the navbar code needs to be added to page.
-//TODO: look into how to change the transition between pages to something more smooth
-
-  void _onBottomNavTapped(int index) {
-    if (index == _currentMenuIndex) return;
-
-    if (index == 2) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const ProfilePage()),
-      ).then((_) {
-        if (mounted) {
-          setState(() => _currentMenuIndex = 0);
-        }
-      });
-    } else if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => const Calendar()),
-      ).then((_) {
-        if (mounted) {
-          setState(() => _currentMenuIndex = 0);
-        }
-      });
-    } else {
-      setState(() => _currentMenuIndex = index);
-    }
   }
 
   // Placeholder menu button widget

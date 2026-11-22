@@ -237,3 +237,12 @@ Future<void> seedSampleData() async {
     ),
   );
 }
+
+Future<void> seedIfEmpty() async {
+  final db = FirestoreService();
+  final existing = await db.getUser('test_user_a');
+  if (existing != null) {
+    return;
+  }
+  await seedSampleData();
+}
