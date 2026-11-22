@@ -19,17 +19,17 @@ class FilterWidget extends StatefulWidget {
 }
 
 class FilterWidgetState extends State<FilterWidget> {
-  ///
+  /// List of Checked Filters
   late List<String> selectedFilters; 
-  /// 
+  /// Service to get tags
   TagService tagService = TagService();
-  /// 
+  /// List of all tags
   late List<String> availableTags;
-  ///
+  /// List of Tags with ordered titles
   late Map<String, List<String>> orderedTags;
-  
+  /// Controller for scrolling
   ScrollController scrollController = ScrollController();
-  /// 
+  /// initiates state, selected filters, list of all tags
   @override
   void initState() {
     super.initState(); 
@@ -44,7 +44,7 @@ class FilterWidgetState extends State<FilterWidget> {
     scrollController.dispose();
     super.dispose();
   }
-  /// 
+  /// Submits filters/saves them
   Widget submitFilters(BuildContext cont){
     return Align(
       alignment: AlignmentGeometry.bottomLeft,
@@ -60,7 +60,7 @@ class FilterWidgetState extends State<FilterWidget> {
       )
     );
   }
-  /// 
+  /// Shows the title and the appropiate widget
   Widget showTitleAndList(String text, Widget widge, BuildContext cont){
     return Column(
       children: [
@@ -72,7 +72,7 @@ class FilterWidgetState extends State<FilterWidget> {
       ]
     );
   }
-  /// 
+  /// Displays the large titles
   Widget displayTitle(String text, BuildContext cont) {
     return Container(
       padding: EdgeInsets.only(
@@ -93,7 +93,7 @@ class FilterWidgetState extends State<FilterWidget> {
     );
   }
 
-
+  ///Displays the smaller titles for the tags
   Widget displayTagTitle(String text, BuildContext cont) {
     return Container(
       padding: EdgeInsets.all(cont.style.spaceExtraSmall), 
@@ -108,7 +108,7 @@ class FilterWidgetState extends State<FilterWidget> {
       )
     );
   }//availableTags
-  /// 
+  /// Displays the smaller titles for the tags and displays the tags
   Widget listTagNTitle(){
     return Column(
       children: orderedTags.entries.map((MapEntry<String, List<String>> entry) {
@@ -121,6 +121,7 @@ class FilterWidgetState extends State<FilterWidget> {
       }).toList(),
     );
   }
+  ///Lists all tags passed
   Widget listTags(List<String> avTags){
     return ListView.builder(
       shrinkWrap: true,
@@ -150,17 +151,19 @@ class FilterWidgetState extends State<FilterWidget> {
       }
     );
   }
-
+  ///Whether or not every tag is selected
   bool allSelected = false;
+  ///The text displayed to either select or deselect all
   String selectText = "Select All";
+  ///Updates the text and checkmark for select all
   void updateSelectAll() {
-    bool matchesAll = ((availableTags.every((tag) => selectedFilters.contains(tag))) && selectedFilters.contains("official") && selectedFilters.contains("unofficial"));
+    bool matchesAll = ((availableTags.every((String tag) => selectedFilters.contains(tag))) && selectedFilters.contains("official") && selectedFilters.contains("unofficial"));
     setState(() {
       allSelected = matchesAll;
       selectText = allSelected ? "Deselect All" : "Select All";
     });
   }
-
+/// Builds select/deselect all check mark
 Widget selectAll() {
   return CheckboxListTile(
     title: Text(selectText),
@@ -190,7 +193,7 @@ Widget selectAll() {
     },
   );
 }
-  ///
+  ///Builds the list of categories with check boxes
   Widget listCategories() { 
     bool offChecked = selectedFilters.contains("official");
     bool unoChecked = selectedFilters.contains("unofficial");
@@ -227,7 +230,7 @@ Widget selectAll() {
       ]
     );
   }
-
+  ///Scroll to bottom mechanism that will smoothly bring the user to the bottom
   void scrollToBottom() {
     if (scrollController.hasClients) {
       scrollController.animateTo(
@@ -237,7 +240,7 @@ Widget selectAll() {
       );
     }
   }
-
+  ///Builds the scroll to bottom button to scroll to the bottom
   Widget goToBottomButton(){
     return Align(
         alignment: Alignment.bottomRight,
@@ -253,6 +256,7 @@ Widget selectAll() {
       );
   }
 
+  ///Builds the filter widget
   @override
   Widget build(BuildContext context) {
     return /*Scaffold(

@@ -42,6 +42,9 @@ class CalendarState extends State<Calendar> {
   /// so switching months doesn't cost extra database reads.
   Stream<List<CalendarEntry>>? entriesStream;
 
+  /// Events of the selected day
+  List<CalendarEntry> selectedEvents = <CalendarEntry>[];
+
   ///Gets the the number of days for the month of whatever date is put in
   int daysInMonth(DateTime date) {
     return DateTime(date.year, date.month + 1, 0).day;
@@ -55,7 +58,7 @@ class CalendarState extends State<Calendar> {
 
   ///Gets today's date
   DateTime getToday() {
-    return today;
+    return dateOnly(today);
   }
 
   /// The user whose calendar to show right now
@@ -195,8 +198,9 @@ class CalendarState extends State<Calendar> {
         crossAxisCount: 7,
         mainAxisSpacing: style.spaceExtraSmall,
         crossAxisSpacing: style.spaceExtraSmall,
-        // Taller than wide, so there's room for event labels.
-        childAspectRatio: 0.55,
+        
+        // Smallest to fit 2 events while keeping calendar small
+        childAspectRatio: 0.79,
       ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -222,16 +226,20 @@ class CalendarState extends State<Calendar> {
           ),
           child: InkWell(
             onTap: () {
-///gotta put our like button logic here
+              setState(() {
+                dayClicked = dateOnly(day);
+                selectedEvents = dayEntries;
+              });
+ 
             },
             child: Padding(
-              padding: const EdgeInsets.all(2),
+              padding: EdgeInsets.only(left: 2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
                     '$dateNum',
-                    style: style.textTheme.bodyMedium?.copyWith(
+                    style: style.textTheme.bodySmall?.copyWith(
                       fontWeight: isToday ? FontWeight.bold : null,
                       color: isToday ? AppColors.purple : null,
                     ),
@@ -292,7 +300,7 @@ class CalendarState extends State<Calendar> {
       'August', 'September', 'October', 'November', 'December',
     ];
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: style.spaceMedium),
+      padding: EdgeInsets.only(top: style.spaceMedium),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
@@ -324,6 +332,68 @@ class CalendarState extends State<Calendar> {
       child: Text(text, textAlign: TextAlign.center),
     );
   }
+  /// Converts DateTime to a printable String that is in regular and not military time
+  String toRegularTime(DateTime military){
+    String amPm = "AM";
+    int hour = military.hour;
+    if (military.hour > 12){
+      hour = military.hour - 12;
+      amPm = "PM";
+    } 
+    String minute = military.minute.toString();
+    if (military.minute < 10){
+      minute = "${minute}0";
+    }
+    String time = "$hour:$minute $amPm";
+    return time;
+  }
+  /// Builds list of shorhands
+  Widget listShorthands(List<CalendarEntry> lis){
+    if(lis == <CalendarEntry>[] || lis.isEmpty) return SizedBox.shrink();
+    return ListView.builder(
+      clipBehavior: Clip.hardEdge, 
+      itemCount: lis.length,
+      itemBuilder: (context, index) {
+        CalendarEntry event = lis[index];
+        String? hex = event.color;
+        Color col = AppColors.purple;
+        if (hex != null && RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(hex)) {
+          col=  Color(int.parse('FF${hex.substring(1)}', radix: 16));
+        }
+        Color textColor = AppColors.black;
+        Brightness bright = ThemeData.estimateBrightnessForColor(col);
+        if (bright == Brightness.dark) textColor = AppColors.white;
+
+        String subTitle = "Start Time: ${toRegularTime(event.startTime)}\n";
+        subTitle = "${subTitle}End Time: ${toRegularTime(event.endTime)} \n";
+        if (event.location != null && event.location!.isNotEmpty){
+          subTitle = "${subTitle}Location: ${event.location ?? ""}";
+        }
+        String? allDay;
+        if(event.allDay == true){
+          allDay = "Event Takes Place All Day";
+        }
+        return Padding (
+          padding: EdgeInsets.only(
+            left: context.style.spaceLarge,
+            top: context.style.spaceMedium,
+            right: context.style.spaceLarge,
+            bottom: context.style.spaceExtraSmall,
+          ), 
+          child: ListTile(
+            tileColor: col,
+            textColor: textColor,
+            title: Text(event.title),
+            subtitle: Text(subTitle),
+            trailing: Text(allDay ?? ""),
+            onTap: () {
+              print("insert pop up here ${event.id}");
+            },
+          )
+        ); 
+      }, 
+    );
+  }
 
   ///Builds the calendar
   @override
@@ -334,37 +404,72 @@ class CalendarState extends State<Calendar> {
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          // Padding around the whole calendar
-          padding: EdgeInsets.symmetric(
-            horizontal: style.spaceMedium,
-            vertical: style.spaceSmall,
-          ),
-          child: StreamBuilder<List<CalendarEntry>>(
-            stream: entriesStream,
-            builder: (BuildContext context,
-                AsyncSnapshot<List<CalendarEntry>> snapshot) {
-              final List<CalendarEntry> entries =
-                  snapshot.data ?? <CalendarEntry>[];
-              final Map<DateTime, List<CalendarEntry>> byDay =
-                  entriesByDay(entries, dayClicked!);
-              return Column(
-                children: <Widget>[
-                  buildCalendarTop(style),
-                  buildWeekdayLabels(style, theme),
-                  buildCalendarGrid(style, theme, byDay),
-                  if (currentUid == null)
-                    buildNote(style, 'Log in to see your events here.'),
-                  if (snapshot.hasError)
-                    buildNote(style,
-                        'Could not load your calendar: ${snapshot.error}'),
-                ],
-              );
-            },
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+           /* Expanded(
+              flex: 4, 
+              child: */Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: style.spaceMedium,
+                  vertical: style.spaceSmall,
+                ),
+                child: StreamBuilder<List<CalendarEntry>>(
+                  stream: entriesStream,  
+                  builder: (BuildContext context,
+                      AsyncSnapshot<List<CalendarEntry>> snapshot) {
+                    final List<CalendarEntry> entries =
+                        snapshot.data ?? <CalendarEntry>[];
+                    final Map<DateTime, List<CalendarEntry>> byDay =
+                        entriesByDay(entries, dayClicked!);
+                    selectedEvents = byDay[dateOnly(dayClicked!)] ?? <CalendarEntry>[];  
+  
+                    return  Column(
+                      children: <Widget>[
+                        buildCalendarTop(style),
+                        buildWeekdayLabels(style, theme),
+                        buildCalendarGrid(style, theme, byDay),
+                        // Expanded( 
+                        //   child: 
+                        // ),
+                        if (currentUid == null)
+                          buildNote(style, 'Log in to see your events here.'),
+                        if (snapshot.hasError)
+                          buildNote(style,
+                              'Could not load your calendar: ${snapshot.error}'),
+                      ],
+                    );
+                  },
+                ),
+              ), 
+           // ), 
+             Expanded(
+              // flex: 1,
+              child: Padding(padding: EdgeInsets.only(
+                left: context.style.pageMargin,
+                right: context.style.pageMargin,
+                bottom: context.style.pageMargin
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                border: Border.all(color: context.style.colorScheme.secondary, width: 2.5),
+              ),
+              child: ClipRect(
+                child: Material (
+                  child: (currentUid != null) ? listShorthands(selectedEvents) : SizedBox.shrink()
+                  )
+                ),
+             ))
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: const AppNavigationBar(currentIndex: 1),
     );
   }
+
 }
+
+
+
+

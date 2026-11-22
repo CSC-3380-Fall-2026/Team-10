@@ -35,7 +35,7 @@ class CalendarEntry {
   });
 
   factory CalendarEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    Map<String, dynamic> d = doc.data() ?? {};
     return CalendarEntry(
       id: doc.id,
       eventId: d['eventId'],
