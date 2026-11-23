@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:tiger_den/pages/widgets/forgot_passoword_page.dart';
+import 'package:tiger_den/pages/widgets/forgot_password_page.dart';
 // import 'package:model2vec/model2vec.dart';
 import 'base_designs/sitewide/design_main.dart';
 import 'firebase_options.dart';
@@ -10,8 +10,9 @@ import 'services/image_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import '../test/search_service_test.dart';
 import 'pages/widgets/home_page.dart';
-import '/pages/widgets/forgot_passoword_page.dart';
+import 'pages/widgets/forgot_password_page.dart';
 import 'pages/widgets/calendar.dart';
+import 'pages/entire_screen/auth_gate.dart';
 import 'pages/entire_screen/search_page.dart';
 import 'pages/widgets/filter_widget.dart';
 import 'pages/widgets/profile_page.dart';
@@ -44,38 +45,29 @@ void main() async {
 //run app for login and signup page
 void runLoginPage() {
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
-      home: const LoginPage(),
+    const TigerDenApp(
+      home: HomePage(),
     ),
   );
 }
 
 void runForgotPassword() {
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
-      home: const ForgotPasswordPage(),
+    const TigerDenApp(
+      home: HomePage(),
+      initialPublicPage: ForgotPasswordPage(),
+      initialPublicRouteName: AuthRoutes.forgotPassword,
     ),
   );
 }
 
 ///run app for eventcreation form.
-void runEventCreationForm(){
+void runEventCreationForm() {
   runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
+    const TigerDenApp(
       home: Scaffold(
         body: SafeArea(
-          child: EventCreationForm(currentUserId:"test_user_a"),
+          child: EventCreationForm(currentUserId: "test_user_a"),
         ),
       ),
     ),
@@ -84,13 +76,9 @@ void runEventCreationForm(){
 
 void runHomePage() {
   runApp(
-    MaterialApp(
+    const TigerDenApp(
       debugShowCheckedModeBanner: true,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
-      home: const HomePage(),
+      home: HomePage(),
     ),
   );
 }
@@ -98,33 +86,25 @@ void runHomePage() {
 //Launches directly to profile page, but page should also be accessible from runHomePage()
 void runProfilePage() {
   runApp(
-    MaterialApp(
+    const TigerDenApp(
       debugShowCheckedModeBanner: true,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
-      home: const ProfilePage(),
+      home: ProfilePage(),
     ),
   );
 }
+
 void runSearchPage() {
   runApp(
-    MaterialApp(
+    const TigerDenApp(
       debugShowCheckedModeBanner: true,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
       home: SearchPage(),
     ),
   );
 }
-  
+
 void runCalendarW() {
   runApp(
-    const MaterialApp(
-      debugShowCheckedModeBanner: false,
+    const TigerDenApp(
       home: Calendar(),
     ),
   );
@@ -132,14 +112,17 @@ void runCalendarW() {
 
 //Page switcher that should work to switch between the pages easier, use openPage("page_name") in main to open any page.
 void openPage(String pageName) {
+  if (pageName == 'login') {
+    runLoginPage();
+    return;
+  }
+  if (pageName == 'forgot_password') {
+    runForgotPassword();
+    return;
+  }
+
   Widget page;
   switch (pageName) {
-    case 'login':
-      page = const LoginPage();
-      break;
-    case 'forgot_password':
-      page = const ForgotPasswordPage();
-      break;
     case 'profile':
       page = const ProfilePage();
       break;
@@ -162,12 +145,7 @@ void openPage(String pageName) {
       break;
   }
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      builder: (context, child) => Theme(
-        data: context.style.theme,
-        child: child!,
-      ),
+    TigerDenApp(
       home: page,
     ),
   );

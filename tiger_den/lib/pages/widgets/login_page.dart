@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/auth_service.dart';
+import '../entire_screen/auth_gate.dart';
 import 'signup_page.dart';
 
 /// The login screen for Tiger Den.
-///
-/// TODO: Add Checkbox for "Remember Me" functionality.
 class LoginPage extends StatefulWidget {
   const LoginPage({
     super.key,
@@ -170,7 +169,7 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Enter your email address and we will send you a link to reset your password.',
+                  'Enter the email address associated with your account.',
                   style: style.textTheme.bodyMedium,
                 ),
                 SizedBox(height: style.spaceMedium),
@@ -464,6 +463,9 @@ class _LoginPageState extends State<LoginPage> {
                                       } else {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
+                                            settings: const RouteSettings(
+                                              name: AuthRoutes.signUp,
+                                            ),
                                             builder: (context) =>
                                                 const SignUpPage(),
                                           ),

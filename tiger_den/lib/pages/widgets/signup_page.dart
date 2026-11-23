@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/auth_service.dart';
+import '../entire_screen/auth_gate.dart';
+import 'login_page.dart';
 
 /// The sign-up screen for Tiger Den.
-///
-/// TODO: Add Checkbox for Terms and Conditions acceptance.
 class SignUpPage extends StatefulWidget {
   const SignUpPage({
     super.key,
@@ -156,6 +156,13 @@ class _SignUpPageState extends State<SignUpPage> {
       widget.onNavigateToLogin!();
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AuthRoutes.login),
+          builder: (context) => const LoginPage(),
+        ),
+      );
     }
   }
 
@@ -231,7 +238,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                         SizedBox(height: style.spaceSmall),
                         Text(
-                          'Create your account to connect and discover events.',
+                          'Create your account to discover events!',
                           textAlign: TextAlign.center,
                           style: style.textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
