@@ -376,6 +376,12 @@ class SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context){
     return Scaffold(
+      appBar: AppBar(
+        foregroundColor: Colors.purple,
+        backgroundColor: Colors.grey,
+        title: const Text('Search'),
+        actions: const [SizedBox.shrink()],
+      ),
       endDrawer: filterDrawer(),
       body: Padding( 
         padding: EdgeInsetsGeometry.symmetric(vertical: context.style.pageMargin), 

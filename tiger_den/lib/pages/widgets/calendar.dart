@@ -5,6 +5,7 @@ import '../../models/calendar_entry.dart';
 import '../../services/firestore_service.dart';
 import '../../services/session_service.dart';
 import '../entire_screen/navigation_bar.dart';
+import '../entire_screen/search_page.dart';
 
 /// The logged-in user's personal calendar: a month grid showing their
 /// calendar entries (events they RSVP'd "going"/"interested" to, plus
@@ -403,6 +404,24 @@ class CalendarState extends State<Calendar> {
     dayClicked ??= getToday();
 
     return Scaffold(
+      appBar: AppBar(
+        foregroundColor: Colors.purple,
+        backgroundColor: Colors.grey,
+        title: const Text('Tiger Den Calendar'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => const SearchPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

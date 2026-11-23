@@ -9,6 +9,7 @@ import '../../services/auth_service.dart';
 import '../../services/current_user_service.dart';
 import '../../services/firestore_service.dart';
 import '../entire_screen/navigation_bar.dart';
+import '../entire_screen/search_page.dart';
 import 'club_Editing.dart';
 import 'event_editing.dart';
 
@@ -349,6 +350,19 @@ class _ProfilePageState extends State<ProfilePage> {
         foregroundColor: Colors.purple,
         backgroundColor: Colors.grey,
         title: const Text('Tiger Den Profile'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => const SearchPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: body,
       bottomNavigationBar: const AppNavigationBar(currentIndex: 2),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/auth_service.dart';
 import '../entire_screen/auth_gate.dart';
+import 'forgot_password_page.dart';
 import 'signup_page.dart';
 
 /// The login screen for Tiger Den.
@@ -23,7 +24,7 @@ class LoginPage extends StatefulWidget {
   final VoidCallback? onNavigateToSignUp;
 
   /// Optional custom callback when the user taps "Forgot Password?".
-  /// If not provided, a default password-reset dialog is shown.
+  /// If not provided, navigates to [ForgotPasswordPage].
   final VoidCallback? onForgotPassword;
 
   /// Optional custom [AuthService] instance (useful for testing/dependency injection).
@@ -140,96 +141,17 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _showForgotPasswordDialog() async {
+  void _navigateToForgotPassword() {
     if (widget.onForgotPassword != null) {
       widget.onForgotPassword!();
       return;
     }
 
-    final resetEmailController =
-        TextEditingController(text: _emailController.text.trim());
-    final resetFormKey = GlobalKey<FormState>();
-
-    await showDialog(
-      context: context,
-      builder: (dialogContext) {
-        final style = dialogContext.style;
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(style.radius),
-          ),
-          title: Text(
-            'Reset Password',
-            style: style.textTheme.titleLarge,
-          ),
-          content: Form(
-            key: resetFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Enter the email address associated with your account.',
-                  style: style.textTheme.bodyMedium,
-                ),
-                SizedBox(height: style.spaceMedium),
-                TextFormField(
-                  controller: resetEmailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                        .hasMatch(value.trim())) {
-                      return 'Please enter a valid email address';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (resetFormKey.currentState!.validate()) {
-                  final email = resetEmailController.text.trim();
-                  Navigator.of(dialogContext).pop();
-
-                  try {
-                    await _authService.sendPasswordReset(email);
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Password reset link sent to $email'),
-                        backgroundColor: Colors.green.shade700,
-                      ),
-                    );
-                  } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to send reset email: $e'),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Send Reset Link'),
-            ),
-          ],
-        );
-      },
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: AuthRoutes.forgotPassword),
+        builder: (context) => const ForgotPasswordPage(),
+      ),
     );
   }
 
@@ -409,7 +331,7 @@ class _LoginPageState extends State<LoginPage> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: _isLoading ? null : _showForgotPasswordDialog,
+                            onPressed: _isLoading ? null : _navigateToForgotPassword,
                             child: Text(
                               'Forgot Password?',
                               style: style.textTheme.bodyMedium?.copyWith(

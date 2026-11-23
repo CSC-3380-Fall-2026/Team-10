@@ -36,9 +36,9 @@ void main() async {
   // runForgotPassword();
   // runImageTest(); 
   // runEventCreationForm();
-  // runHomePage();
+  runHomePage();
   // runProfilePage();
-  runCalendarW();
+  // runCalendarW();
 
 }
 
