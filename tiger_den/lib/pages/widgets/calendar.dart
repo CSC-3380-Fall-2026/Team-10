@@ -201,7 +201,7 @@ class CalendarState extends State<Calendar> {
         crossAxisSpacing: style.spaceExtraSmall,
         
         // Smallest to fit 2 events while keeping calendar small
-        childAspectRatio: 0.79,
+        childAspectRatio: 0.77,
       ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -343,7 +343,7 @@ class CalendarState extends State<Calendar> {
     } 
     String minute = military.minute.toString();
     if (military.minute < 10){
-      minute = "${minute}0";
+      minute = "0${minute}";
     }
     String time = "$hour:$minute $amPm";
     return time;
