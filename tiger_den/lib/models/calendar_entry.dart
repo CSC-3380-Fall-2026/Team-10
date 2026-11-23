@@ -17,6 +17,7 @@ class CalendarEntry {
   final DateTime endTime;
   final bool allDay;
   final String? location;
+  //Type everywhere else is used to signal if its a event or club, i also dont get what the point of this is < (Logan)
   final CalendarEntryType type;
   final int? reminderMinutesBefore;
   final String? color; // e.g. '#4A90E2'
