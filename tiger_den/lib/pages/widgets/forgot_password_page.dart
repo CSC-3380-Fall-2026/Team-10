@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../base_designs/sitewide/design_main.dart';
+import '../entire_screen/auth_gate.dart';
+import 'login_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({
@@ -111,6 +113,13 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ///CHANGE
     } else if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: AuthRoutes.login),
+          builder: (context) => const LoginPage(),
+        ),
+      );
     }
   }
 
