@@ -4,6 +4,7 @@ import '../../base_designs/sitewide/design_main.dart';
 import '../../services/image_service.dart';
 import '../widgets/filter_widget.dart';
 import '../widgets/event_details_page.dart';
+import '../widgets/club_page.dart';
 
 
 class SearchPage extends StatefulWidget {
@@ -197,7 +198,8 @@ class SearchPageState extends State<SearchPage> {
                     final String eventId = result['objectID'] as String;
                     EventDetailsPage.open(context, eventId);
                   } else if (type == "club"){
-                    print('add link to club viewing widgets hereeeeeeeeeeeeeeee');
+                    final String orgId = result['objectID'] as String;
+                    ClubPage.open(context, orgId);
                   }
                     },
                 leading: imageDisplay,
