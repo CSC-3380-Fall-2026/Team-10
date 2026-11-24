@@ -466,3 +466,30 @@ parameters still show fixed data without the database.
 **Testing:** `flutter run -t lib/dev/profile_test_main.dart -d emulator-5554`
 opens the profile as any test user (A owner, B admin, C member, D pending,
 E no clubs) or the logged-in user.
+
+
+
+## Event details page and RSVP
+
+`lib/pages/widgets/event_details_page.dart` is a reusable page for one
+event. Open it from anywhere with:
+
+```dart
+EventDetailsPage.open(context, eventId);
+```
+
+It shows the event's image, title, club or student event, host club,
+date/time, location (or meeting link), "X going" and capacity, description,
+and tags, all updating live.
+
+The logged-in user can tap **RSVP: Going**, which uses
+`FirestoreService.rsvp`: it adds the event to their calendar and raises
+`attendeeCount`. **Cancel RSVP** uses `cancelRsvp` to undo both. Their current
+RSVP comes from `streamMyRsvp`. Full, cancelled, or past events, or a
+logged-out user, show a disabled button with the reason instead.
+
+It opens from search results (events) and from the calendar's day list.
+
+**Testing:** `flutter run -t lib/dev/event_details_test_main.dart -d emulator-5554`
+opens any event as any test user. The seeded events are in October (past),
+so move one to a future date with the event edit test page first.

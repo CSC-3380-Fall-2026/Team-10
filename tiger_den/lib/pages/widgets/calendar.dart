@@ -6,6 +6,7 @@ import '../../services/firestore_service.dart';
 import '../../services/session_service.dart';
 import '../entire_screen/navigation_bar.dart';
 import '../entire_screen/search_page.dart';
+import 'event_details_page.dart';
 
 /// The logged-in user's personal calendar: a month grid showing their
 /// calendar entries (events they RSVP'd "going"/"interested" to, plus
@@ -387,9 +388,9 @@ class CalendarState extends State<Calendar> {
             title: Text(event.title),
             subtitle: Text(subTitle),
             trailing: Text(allDay ?? ""),
-            onTap: () {
-              print("insert pop up here ${event.id}");
-            },
+            onTap: event.eventId == null
+                ? null // personal entries have no event page
+                : () => EventDetailsPage.open(context, event.eventId!),
           )
         ); 
       }, 

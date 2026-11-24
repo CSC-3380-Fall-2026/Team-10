@@ -3,6 +3,7 @@ import '../../services/search_service.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../services/image_service.dart';
 import '../widgets/filter_widget.dart';
+import '../widgets/event_details_page.dart';
 
 
 class SearchPage extends StatefulWidget {
@@ -193,7 +194,8 @@ class SearchPageState extends State<SearchPage> {
                 tileColor: context.style.colorScheme.surface,
                 onTap: () {
                   if(type == "event"){
-                    print('add link to event viewing widgets hereeeeeeeeeeeeeeee');
+                    final String eventId = result['objectID'] as String;
+                    EventDetailsPage.open(context, eventId);
                   } else if (type == "club"){
                     print('add link to club viewing widgets hereeeeeeeeeeeeeeee');
                   }
