@@ -510,16 +510,13 @@ Test page: `flutter run -t lib/dev/club_page_test_main.dart -d emulator-5554`
 
 
 
-## What this does
-- Adds a "+" button on Home with two choices: **Create Event** and **Create Club**
-- Each opens the existing creation form on its own page (with a title bar and back arrow)
-- The forms now use the logged-in user instead of the hard-coded `test_user_a`
-- Shows "Log in to create events and clubs" if nobody is logged in
+## "+" Create Button
 
-## What we had to do to make this work
-- Put the button and both create pages in a new file (`create_menu.dart`) so the existing event and club forms didn't need to change
-- Used `SessionService.instance.currentUid` to pass the logged-in user into the forms
-- Only 2 lines changed in `home_page.dart` (an import and `floatingActionButton`), to keep conflicts small for anyone working on Home
+Home has a "+" button (`CreateButton` in `lib/pages/widgets/create_menu.dart`). It opens a menu with:
 
-## How to test
-Run the app, log in, tap "+" on Home, and create a club and an event. The club shows up on Profile, and the event shows up in search.
+- **Create Event**, which opens `EventCreationForm` on its own page.
+- **Create Club**, which opens `ClubCreateForm` on its own page.
+
+Both forms use the logged-in user (`SessionService.instance.currentUid`) instead of a hard-coded test user. If nobody is logged in, the button shows a message instead.
+
+To add the button to another page: `floatingActionButton: const CreateButton(),`
