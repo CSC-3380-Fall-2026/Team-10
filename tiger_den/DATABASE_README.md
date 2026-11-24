@@ -493,3 +493,17 @@ It opens from search results (events) and from the calendar's day list.
 **Testing:** `flutter run -t lib/dev/event_details_test_main.dart -d emulator-5554`
 opens any event as any test user. The seeded events are in October (past),
 so move one to a future date with the event edit test page first.
+
+
+
+## Club Page and Joining
+
+`ClubPage.open(context, orgId)` opens a club's page from anywhere (search results use it).
+
+- **Join** calls `joinOrganization`. It adds the user to `organizations/{orgId}/members/{uid}` and to `users/{uid}/memberships/{orgId}`, and adds 1 to `memberCount`.
+- If the club has `requiresApproval: true`, both entries are saved with status `pending` and `memberCount` doesn't change until an admin approves.
+- **Leave club** and **Cancel request** call `leaveOrganization`. That removes both entries, and subtracts 1 from `memberCount` only if the user was an active member.
+- Owners and admins can't leave from this page.
+- The page updates live, so the member count and button change right away.
+
+Test page: `flutter run -t lib/dev/club_page_test_main.dart -d emulator-5554`
