@@ -507,3 +507,16 @@ so move one to a future date with the event edit test page first.
 - The page updates live, so the member count and button change right away.
 
 Test page: `flutter run -t lib/dev/club_page_test_main.dart -d emulator-5554`
+
+
+
+## "+" Create Button
+
+Home has a "+" button (`CreateButton` in `lib/pages/widgets/create_menu.dart`). It opens a menu with:
+
+- **Create Event**, which opens `EventCreationForm` on its own page.
+- **Create Club**, which opens `ClubCreateForm` on its own page.
+
+Both forms use the logged-in user (`SessionService.instance.currentUid`) instead of a hard-coded test user. If nobody is logged in, the button shows a message instead.
+
+To add the button to another page: `floatingActionButton: const CreateButton(),`
