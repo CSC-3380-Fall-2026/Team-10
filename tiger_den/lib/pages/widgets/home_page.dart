@@ -5,6 +5,7 @@ import '../../base_designs/sitewide/design_main.dart';
 import '../../services/auth_service.dart';
 import '../entire_screen/navigation_bar.dart';
 import '../entire_screen/search_page.dart';
+import 'create_menu.dart';
 
 // Home Page for Tiger Den App
 // TODO: Hook in pulling images/names from database
@@ -278,6 +279,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+      floatingActionButton: const CreateButton(),
       bottomNavigationBar: const AppNavigationBar(currentIndex: 0),
     );
   }
