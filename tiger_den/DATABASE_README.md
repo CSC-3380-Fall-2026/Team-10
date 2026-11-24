@@ -520,3 +520,16 @@ Home has a "+" button (`CreateButton` in `lib/pages/widgets/create_menu.dart`). 
 Both forms use the logged-in user (`SessionService.instance.currentUid`) instead of a hard-coded test user. If nobody is logged in, the button shows a message instead.
 
 To add the button to another page: `floatingActionButton: const CreateButton(),`
+
+
+
+## Demo Data
+
+`lib/dev/demo_data.dart` sets up everything for the class demo around one login, testuser1@tigerden.dev.
+
+Run it with: `flutter run -t lib/dev/demo_data_main.dart -d emulator-5554`
+
+- **Create / refresh demo data** creates 3 clubs (Tiger Chess Club, Tiger Photography Guild, LSU Running Club), 4 events in the coming week, RSVPs and members, and adds all of them to search. Safe to run again: it reuses existing clubs and events (matched by name) and moves the event dates back into the coming week instead of making duplicates.
+- **Reset live demo steps** removes testuser1 from Tiger Chess Club and cancels its RSVP to Friday Night Blitz, so the demo's Join and RSVP steps can be practiced again.
+
+Jordan Lee, Maya Patel and Chris Nguyen (`demo_jordan`, `demo_maya`, `demo_chris`) are profile-only users with no logins. Run "Create / refresh" the day before the demo.
