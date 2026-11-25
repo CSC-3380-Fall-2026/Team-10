@@ -5,6 +5,8 @@ import '../../models/calendar_entry.dart';
 import '../../services/firestore_service.dart';
 import '../../services/session_service.dart';
 import '../entire_screen/navigation_bar.dart';
+import '../entire_screen/search_page.dart';
+import 'event_details_page.dart';
 
 /// The logged-in user's personal calendar: a month grid showing their
 /// calendar entries (events they RSVP'd "going"/"interested" to, plus
@@ -200,7 +202,7 @@ class CalendarState extends State<Calendar> {
         crossAxisSpacing: style.spaceExtraSmall,
         
         // Smallest to fit 2 events while keeping calendar small
-        childAspectRatio: 0.79,
+        childAspectRatio: 0.77,
       ),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -342,7 +344,7 @@ class CalendarState extends State<Calendar> {
     } 
     String minute = military.minute.toString();
     if (military.minute < 10){
-      minute = "${minute}0";
+      minute = "0${minute}";
     }
     String time = "$hour:$minute $amPm";
     return time;
@@ -386,9 +388,9 @@ class CalendarState extends State<Calendar> {
             title: Text(event.title),
             subtitle: Text(subTitle),
             trailing: Text(allDay ?? ""),
-            onTap: () {
-              print("insert pop up here ${event.id}");
-            },
+            onTap: event.eventId == null
+                ? null // personal entries have no event page
+                : () => EventDetailsPage.open(context, event.eventId!),
           )
         ); 
       }, 
@@ -403,6 +405,24 @@ class CalendarState extends State<Calendar> {
     dayClicked ??= getToday();
 
     return Scaffold(
+      appBar: AppBar(
+        foregroundColor: Colors.purple,
+        backgroundColor: Colors.grey,
+        title: const Text('Tiger Den Calendar'),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => const SearchPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

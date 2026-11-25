@@ -466,3 +466,70 @@ parameters still show fixed data without the database.
 **Testing:** `flutter run -t lib/dev/profile_test_main.dart -d emulator-5554`
 opens the profile as any test user (A owner, B admin, C member, D pending,
 E no clubs) or the logged-in user.
+
+
+
+## Event details page and RSVP
+
+`lib/pages/widgets/event_details_page.dart` is a reusable page for one
+event. Open it from anywhere with:
+
+```dart
+EventDetailsPage.open(context, eventId);
+```
+
+It shows the event's image, title, club or student event, host club,
+date/time, location (or meeting link), "X going" and capacity, description,
+and tags, all updating live.
+
+The logged-in user can tap **RSVP: Going**, which uses
+`FirestoreService.rsvp`: it adds the event to their calendar and raises
+`attendeeCount`. **Cancel RSVP** uses `cancelRsvp` to undo both. Their current
+RSVP comes from `streamMyRsvp`. Full, cancelled, or past events, or a
+logged-out user, show a disabled button with the reason instead.
+
+It opens from search results (events) and from the calendar's day list.
+
+**Testing:** `flutter run -t lib/dev/event_details_test_main.dart -d emulator-5554`
+opens any event as any test user. The seeded events are in October (past),
+so move one to a future date with the event edit test page first.
+
+
+
+## Club Page and Joining
+
+`ClubPage.open(context, orgId)` opens a club's page from anywhere (search results use it).
+
+- **Join** calls `joinOrganization`. It adds the user to `organizations/{orgId}/members/{uid}` and to `users/{uid}/memberships/{orgId}`, and adds 1 to `memberCount`.
+- If the club has `requiresApproval: true`, both entries are saved with status `pending` and `memberCount` doesn't change until an admin approves.
+- **Leave club** and **Cancel request** call `leaveOrganization`. That removes both entries, and subtracts 1 from `memberCount` only if the user was an active member.
+- Owners and admins can't leave from this page.
+- The page updates live, so the member count and button change right away.
+
+Test page: `flutter run -t lib/dev/club_page_test_main.dart -d emulator-5554`
+
+
+
+## "+" Create Button
+
+Home has a "+" button (`CreateButton` in `lib/pages/widgets/create_menu.dart`). It opens a menu with:
+
+- **Create Event**, which opens `EventCreationForm` on its own page.
+- **Create Club**, which opens `ClubCreateForm` on its own page.
+
+Both forms use the logged-in user (`SessionService.instance.currentUid`) instead of a hard-coded test user. If nobody is logged in, the button shows a message instead.
+
+To add the button to another page: `floatingActionButton: const CreateButton(),`
+
+
+
+## Demo Data
+
+`lib/dev/demo_data.dart` sets up everything for the class demo around one login, testuser1@tigerden.dev.
+
+Run it with: `flutter run -t lib/dev/demo_data_main.dart -d emulator-5554`
+
+- **Create / refresh demo data** creates 3 clubs (Tiger Chess Club, Tiger Photography Guild, LSU Running Club), 4 events in the coming week, RSVPs and members, and adds all of them to search. Safe to run again: it reuses existing clubs and events (matched by name) and moves the event dates back into the coming week instead of making duplicates.
+- **Reset live demo steps** removes testuser1 from Tiger Chess Club and cancels its RSVP to Friday Night Blitz, so the demo's Join and RSVP steps can be practiced again.
+
+Jordan Lee, Maya Patel and Chris Nguyen (`demo_jordan`, `demo_maya`, `demo_chris`) are profile-only users with no logins. Run "Create / refresh" the day before the demo.
