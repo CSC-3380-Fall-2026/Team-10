@@ -47,6 +47,9 @@ class CalendarState extends State<Calendar> {
   /// Events of the selected day
   List<CalendarEntry> selectedEvents = <CalendarEntry>[];
 
+  /// Boolean to see if the page has just loaded for the sake of the date display at the bottom
+  bool firstLoad = true;
+
   ///Gets the the number of days for the month of whatever date is put in
   int daysInMonth(DateTime date) {
     return DateTime(date.year, date.month + 1, 0).day;
@@ -230,6 +233,7 @@ class CalendarState extends State<Calendar> {
             onTap: () {
               setState(() {
                 dayClicked = dateOnly(day);
+                firstLoad = false;
                 selectedEvents = dayEntries;
               });
  
@@ -396,13 +400,24 @@ class CalendarState extends State<Calendar> {
       }, 
     );
   }
-
+  ///Returns the date to display at the bottom when a date is clicked
+  String getDateDisplay(){
+    if (firstLoad){
+      return "";
+    }
+    String date = "Date: ${dayClicked!.month}-${dayClicked!.day}-${dayClicked!.year}";
+    
+    return date;
+  }
   ///Builds the calendar
   @override
   Widget build(BuildContext context) {
     final AppStyle style = context.style;
     final ThemeData theme = Theme.of(context);
-    dayClicked ??= getToday();
+    if (dayClicked == null){
+      firstLoad = true;
+      dayClicked = getToday();
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -423,7 +438,7 @@ class CalendarState extends State<Calendar> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -463,9 +478,17 @@ class CalendarState extends State<Calendar> {
                 ),
               ), 
            // ), 
-             Expanded(
-              // flex: 1,
-              child: Padding(padding: EdgeInsets.only(
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: context.style.pageMargin),
+              child: Text(
+                getDateDisplay(),
+                style: context.style.theme.textTheme.bodyMedium
+              ),
+            ),
+            Container(
+            //   // flex: 1,
+              height: 175,
+              padding: EdgeInsets.only(
                 left: context.style.pageMargin,
                 right: context.style.pageMargin,
                 bottom: context.style.pageMargin
@@ -479,7 +502,7 @@ class CalendarState extends State<Calendar> {
                   child: (currentUid != null) ? listShorthands(selectedEvents) : SizedBox.shrink()
                   )
                 ),
-             ))
+             )
             ),
           ],
         ),
