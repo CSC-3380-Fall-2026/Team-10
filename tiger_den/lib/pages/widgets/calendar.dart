@@ -220,13 +220,14 @@ class CalendarState extends State<Calendar> {
             byDay[day] ?? <CalendarEntry>[];
         final bool isToday = day == dateOnly(today);
         final int hiddenCount = dayEntries.length - maxChips;
-
+        final bool picked = (dateOnly(dayClicked!) == dateOnly(day) && !firstLoad);
         return Container(
           decoration: BoxDecoration(
             border: Border.all(
-              color: isToday ? AppColors.purple : theme.colorScheme.outline,
-              width: isToday ? 2 : 1,
+              color: picked ? AppColors.yellow : isToday ? AppColors.purple : theme.colorScheme.outline,
+              width: picked || isToday ? 2 : picked && isToday ? 3 : 1,
             ),
+            
             borderRadius: BorderRadius.circular(4),
           ),
           child: InkWell(
