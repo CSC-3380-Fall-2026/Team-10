@@ -33,7 +33,7 @@ typedef SignupPage = SignUpPage;
 typedef SignUpScreen = SignUpPage;
 
 class _SignUpPageState extends State<SignUpPage> {
-  final _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -71,15 +71,15 @@ class _SignUpPageState extends State<SignUpPage> {
       _errorMessage = null;
     });
 
-    final fullName = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final String fullName = _nameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text;
 
     // Parse name into first and last name components
-    final nameParts = fullName.split(RegExp(r'\s+'));
-    final firstName = nameParts.isNotEmpty ? nameParts.first : fullName;
-    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
-    final username = email.contains('@')
+    final List<String> nameParts = fullName.split(RegExp(r'\s+'));
+    final String firstName = nameParts.isNotEmpty ? nameParts.first : fullName;
+    final String lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+    final String username = email.contains('@')
         ? email.split('@').first
         : fullName.toLowerCase().replaceAll(RegExp(r'\s+'), '_');
 
@@ -136,7 +136,7 @@ class _SignUpPageState extends State<SignUpPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      final message = 'An unexpected error occurred during sign up. Please try again.';
+      final String message = 'An unexpected error occurred during sign up. Please try again.';
       setState(() => _errorMessage = message);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -160,7 +160,7 @@ class _SignUpPageState extends State<SignUpPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           settings: const RouteSettings(name: AuthRoutes.login),
-          builder: (context) => const LoginPage(),
+          builder: (BuildContext context) => const LoginPage(),
         ),
       );
     }
@@ -169,13 +169,13 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     // Access sitewide design variables from design_main.dart
-    final style = context.style;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final AppStyle style = context.style;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
 
     // Responsive form container max width for medium and expanded screens
-    final isCompact = style.screen == ScreenSize.compact;
-    final maxCardWidth = isCompact ? double.infinity : 460.0;
+    final bool isCompact = style.screen == ScreenSize.compact;
+    final double maxCardWidth = isCompact ? double.infinity : 460.0;
 
     return Scaffold(
       body: SafeArea(
@@ -208,7 +208,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                      children: <Widget>[
                         // App Icon / Branding
                         Center(
                           child: Container(
@@ -247,7 +247,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         SizedBox(height: style.spaceLarge),
 
                         // Error Banner (if any)
-                        if (_errorMessage != null) ...[
+                        if (_errorMessage != null) ...<Widget>[
                           Container(
                             padding: EdgeInsets.all(style.spaceSmall),
                             decoration: BoxDecoration(
@@ -255,7 +255,7 @@ class _SignUpPageState extends State<SignUpPage> {
                               borderRadius: BorderRadius.circular(style.radius),
                             ),
                             child: Row(
-                              children: [
+                              children: <Widget>[
                                 Icon(
                                   Icons.error_outline,
                                   color: colorScheme.onErrorContainer,
@@ -288,7 +288,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             hintText: 'Jane Doe',
                             prefixIcon: Icon(Icons.person_outline),
                           ),
-                          validator: (value) {
+                          validator: (String? value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your full name';
                             }
@@ -311,7 +311,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             hintText: 'user@example.com',
                             prefixIcon: Icon(Icons.email_outlined),
                           ),
-                          validator: (value) {
+                          validator: (String? value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your email address';
                             }
@@ -351,7 +351,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                   : 'Show password',
                             ),
                           ),
-                          validator: (value) {
+                          validator: (String? value) {
                             if (value == null || value.isEmpty) {
                               return 'Please create a password';
                             }
@@ -389,7 +389,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         // Back to Login Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+                          children: <Widget>[
                             Text(
                               'Already have an account?',
                               style: style.textTheme.bodyMedium?.copyWith(

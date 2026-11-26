@@ -25,7 +25,7 @@ import '../services/firestore_service.dart';
 /// Note: these test users are profile documents only, not real login
 /// accounts, so you can't log in as them. Real users come from sign up.
 Future<void> seedSampleData() async {
-  final db = FirestoreService();
+  final FirestoreService db = FirestoreService();
 
   // ---------------------------------------------------------------------------
   // Users
@@ -40,25 +40,25 @@ Future<void> seedSampleData() async {
         bio: 'TEST USER: $role',
         major: 'Test Major',
         gradYear: 2028,
-        interests: ['testing'],
+        interests: <String>['testing'],
       );
 
-  final userA = testUser('A', 'Owner of User A\'s Club');
-  final userB = testUser(
+  final AppUser userA = testUser('A', 'Owner of User A\'s Club');
+  final AppUser userB = testUser(
       'B', 'Owner of User B\'s Club, admin in User A\'s Club');
-  final userC = testUser(
+  final AppUser userC = testUser(
       'C', 'Member of User A\'s Club and User B\'s Club');
-  final userD = testUser('D', 'Pending member of User B\'s Club');
-  final userE = testUser('E', 'In no clubs; hosts own event, RSVPs to others');
+  final AppUser userD = testUser('D', 'Pending member of User B\'s Club');
+  final AppUser userE = testUser('E', 'In no clubs; hosts own event, RSVPs to others');
 
-  for (final u in [userA, userB, userC, userD, userE]) {
+  for (final AppUser u in <AppUser>[userA, userB, userC, userD, userE]) {
     await db.createUserProfile(u);
   }
 
   // ---------------------------------------------------------------------------
   // Clubs
   // ---------------------------------------------------------------------------
-  final clubAId = await db.createOrganization(
+  final String clubAId = await db.createOrganization(
     Organization(
       id: '', // ignored; Firestore picks the ID
       name: 'User A\'s Club',
@@ -66,10 +66,10 @@ Future<void> seedSampleData() async {
       description: 'TEST CLUB: Open to join. Owner: User A. '
           'Admin: User B. Member: User C.',
       category: 'Test Category',
-      tags: ['test', 'open'],
+      tags: <String>['test', 'open'],
       contactEmail: 'usera@test.com',
-      socialLinks: {'instagram': 'https://instagram.com/test_club_a'},
-      meetingInfo: {
+      socialLinks: <String, String>{'instagram': 'https://instagram.com/test_club_a'},
+      meetingInfo: <String, String>{
         'day': 'Monday',
         'time': '6:00 PM',
         'location': 'Test Room A',
@@ -79,7 +79,7 @@ Future<void> seedSampleData() async {
     userA,
   );
 
-  final clubBId = await db.createOrganization(
+  final String clubBId = await db.createOrganization(
     Organization(
       id: '',
       name: 'User B\'s Club',
@@ -87,9 +87,9 @@ Future<void> seedSampleData() async {
       description: 'TEST CLUB: Requires approval to join. Owner: User B. '
           'Member: User C (approved). Pending: User D.',
       category: 'Test Category',
-      tags: ['test', 'approval-required'],
+      tags: <String>['test', 'approval-required'],
       contactEmail: 'userb@test.com',
-      meetingInfo: {
+      meetingInfo: <String, String>{
         'day': 'Wednesday',
         'time': '5:00 PM',
         'location': 'Test Room B',
@@ -99,8 +99,8 @@ Future<void> seedSampleData() async {
     userB,
   );
 
-  final clubA = (await db.getOrganization(clubAId))!;
-  final clubB = (await db.getOrganization(clubBId))!;
+  final Organization clubA = (await db.getOrganization(clubAId))!;
+  final Organization clubB = (await db.getOrganization(clubBId))!;
 
   // User A's Club: User B joins and is promoted to admin; User C joins.
   await db.joinOrganization(clubA, userB);
@@ -115,69 +115,69 @@ Future<void> seedSampleData() async {
   // ---------------------------------------------------------------------------
   // Events
   // ---------------------------------------------------------------------------
-  final now = DateTime.now();
+  final DateTime now = DateTime.now();
   DateTime daysFromNow(int days, int hour) =>
       DateTime(now.year, now.month, now.day + days, hour);
 
-  final eventAId = await db.createEvent(Event(
+  final String eventAId = await db.createEvent(Event(
     id: '',
     title: 'User A\'s Event',
     description: 'TEST EVENT: Public event for User A\'s Club. '
         'Going: A, B, C. Interested: E.',
     category: 'Test Category',
-    tags: ['test', 'public'],
+    tags: <String>['test', 'public'],
     organizationId: clubAId,
     organizationName: clubA.name,
     createdBy: userA.id,
-    hostIds: [userA.id, userB.id],
+    hostIds: <String>[userA.id, userB.id],
     startTime: daysFromNow(7, 18),
     endTime: daysFromNow(7, 20),
     location: EventLocation(name: 'Test Room A', address: '123 Test St'),
     capacity: 30,
   ));
 
-  final eventBId = await db.createEvent(Event(
+  final String eventBId = await db.createEvent(Event(
     id: '',
     title: 'User B\'s Members-Only Event',
     description: 'TEST EVENT: Members-only event for User B\'s Club. '
         'Going: B, C.',
     category: 'Test Category',
-    tags: ['test', 'members-only'],
+    tags: <String>['test', 'members-only'],
     organizationId: clubBId,
     organizationName: clubB.name,
     createdBy: userB.id,
-    hostIds: [userB.id],
+    hostIds: <String>[userB.id],
     startTime: daysFromNow(5, 17),
     endTime: daysFromNow(5, 19),
     location: EventLocation(name: 'Test Room B'),
     visibility: EventVisibility.membersOnly,
   ));
 
-  final cancelledId = await db.createEvent(Event(
+  final String cancelledId = await db.createEvent(Event(
     id: '',
     title: 'User A\'s Cancelled Event',
     description: 'TEST EVENT: This event was cancelled.',
     category: 'Test Category',
-    tags: ['test', 'cancelled'],
+    tags: <String>['test', 'cancelled'],
     organizationId: clubAId,
     organizationName: clubA.name,
     createdBy: userA.id,
-    hostIds: [userA.id],
+    hostIds: <String>[userA.id],
     startTime: daysFromNow(12, 18),
     endTime: daysFromNow(12, 19),
     location: EventLocation(name: 'Test Room A'),
   ));
   await db.cancelEvent(cancelledId);
 
-  final eventEId = await db.createEvent(Event(
+  final String eventEId = await db.createEvent(Event(
     id: '',
     title: 'User E\'s Event (No Club, Virtual)',
     description: 'TEST EVENT: Hosted by a user without a club. '
         'Going: E. Not going: A.',
     category: 'Test Category',
-    tags: ['test', 'virtual', 'no-club'],
+    tags: <String>['test', 'virtual', 'no-club'],
     createdBy: userE.id,
-    hostIds: [userE.id],
+    hostIds: <String>[userE.id],
     startTime: daysFromNow(9, 19),
     endTime: daysFromNow(9, 21),
     location: EventLocation(
@@ -187,14 +187,14 @@ Future<void> seedSampleData() async {
     ),
   ));
 
-  final pastId = await db.createEvent(Event(
+  final String pastId = await db.createEvent(Event(
     id: '',
     title: 'User C\'s Past Event',
     description: 'TEST EVENT: Already happened (completed). Going: C.',
     category: 'Test Category',
-    tags: ['test', 'past'],
+    tags: <String>['test', 'past'],
     createdBy: userC.id,
-    hostIds: [userC.id],
+    hostIds: <String>[userC.id],
     startTime: daysFromNow(-7, 15),
     endTime: daysFromNow(-7, 16),
     location: EventLocation(name: 'Test Room C'),
@@ -204,21 +204,21 @@ Future<void> seedSampleData() async {
   // ---------------------------------------------------------------------------
   // RSVPs (these also add calendar entries automatically)
   // ---------------------------------------------------------------------------
-  final eventA = (await db.getEvent(eventAId))!;
+  final Event eventA = (await db.getEvent(eventAId))!;
   await db.rsvp(eventA, userA, RsvpStatus.going);
   await db.rsvp(eventA, userB, RsvpStatus.going);
   await db.rsvp(eventA, userC, RsvpStatus.going);
   await db.rsvp(eventA, userE, RsvpStatus.interested);
 
-  final eventB = (await db.getEvent(eventBId))!;
+  final Event eventB = (await db.getEvent(eventBId))!;
   await db.rsvp(eventB, userB, RsvpStatus.going);
   await db.rsvp(eventB, userC, RsvpStatus.going);
 
-  final eventE = (await db.getEvent(eventEId))!;
+  final Event eventE = (await db.getEvent(eventEId))!;
   await db.rsvp(eventE, userE, RsvpStatus.going);
   await db.rsvp(eventE, userA, RsvpStatus.notGoing);
 
-  final pastEvent = (await db.getEvent(pastId))!;
+  final Event pastEvent = (await db.getEvent(pastId))!;
   await db.rsvp(pastEvent, userC, RsvpStatus.going);
 
   // ---------------------------------------------------------------------------
@@ -239,8 +239,8 @@ Future<void> seedSampleData() async {
 }
 
 Future<void> seedIfEmpty() async {
-  final db = FirestoreService();
-  final existing = await db.getUser('test_user_a');
+  final FirestoreService db = FirestoreService();
+  final AppUser? existing = await db.getUser('test_user_a');
   if (existing != null) {
     return;
   }

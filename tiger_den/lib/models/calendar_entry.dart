@@ -36,7 +36,7 @@ class CalendarEntry {
   });
 
   factory CalendarEntry.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    Map<String, dynamic> d = doc.data() ?? {};
+    Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return CalendarEntry(
       id: doc.id,
       eventId: d['eventId'],
@@ -52,7 +52,7 @@ class CalendarEntry {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'eventId': eventId,
         'title': title,
         'startTime': Timestamp.fromDate(startTime),

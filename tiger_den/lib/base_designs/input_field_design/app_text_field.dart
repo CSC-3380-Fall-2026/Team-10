@@ -28,23 +28,23 @@ import 'input_decoration.dart';
 /// empty; [validator] can add extra rules on top.
 class AppTextField extends StatefulWidget {
   const AppTextField({
-    super.key,
-    required this.label,
-    this.controller,
-    this.initialValue,
-    this.hint,
-    this.helperText,
-    this.isRequired = false,
-    this.validator,
-    this.keyboardType,
-    this.textInputAction,
-    this.isPassword = false,
-    this.maxLines = 1,
-    this.maxLength,
-    this.prefixIcon,
-    this.enabled = true,
-    this.onChanged,
-    this.autofillHints,
+    Key? super.key,
+    required String this.label,
+    TextEditingController? this.controller,
+    String? this.initialValue,
+    String? this.hint,
+    String? this.helperText,
+    bool this.isRequired = false,
+    String? Function(String?)? this.validator,
+    TextInputType? this.keyboardType,
+    TextInputAction? this.textInputAction,
+    bool this.isPassword = false,
+    int this.maxLines = 1,
+    int? this.maxLength,
+    IconData? this.prefixIcon,
+    bool this.enabled = true,
+    void Function(String)? this.onChanged,
+    Iterable<String>? this.autofillHints,
   })  : assert(controller == null || initialValue == null,
             'Use either controller or initialValue, not both.'),
         assert(!isPassword || maxLines == 1,
@@ -104,7 +104,7 @@ class _AppTextFieldState extends State<AppTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final passwordToggle = widget.isPassword
+    final IconButton? passwordToggle = widget.isPassword
         ? IconButton(
             tooltip: _obscured ? 'Show password' : 'Hide password',
             icon: Icon(_obscured

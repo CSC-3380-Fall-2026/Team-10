@@ -45,7 +45,7 @@ class ClubEditTestPage extends StatefulWidget {
 }
 
 class _ClubEditTestPageState extends State<ClubEditTestPage> {
-  static const _testUsers = {
+  static const Map<String, String> _testUsers = <String, String>{
     'test_user_a': 'User A (owner of User A\'s Club)',
     'test_user_b': 'User B (owner of B\'s Club, admin in A\'s)',
     'test_user_c': 'User C (regular member)',
@@ -92,15 +92,15 @@ class _ClubEditTestPageState extends State<ClubEditTestPage> {
       appBar: AppBar(title: const Text('Club Edit Test (dev only)')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
+        children: <Widget>[
           DropdownButtonFormField<String>(
             initialValue: _userId,
             decoration: const InputDecoration(labelText: 'Test as'),
-            items: [
-              for (final entry in _testUsers.entries)
+            items: <DropdownMenuItem<String>>[
+              for (final MapEntry<String, String> entry in _testUsers.entries)
                 DropdownMenuItem(value: entry.key, child: Text(entry.value)),
             ],
-            onChanged: (value) => setState(() => _userId = value!),
+            onChanged: (String? value) => setState(() => _userId = value!),
           ),
           const SizedBox(height: 16),
           FilledButton.icon(
@@ -113,7 +113,7 @@ class _ClubEditTestPageState extends State<ClubEditTestPage> {
               style: Theme.of(context).textTheme.titleMedium),
           StreamBuilder<List<Organization>>(
             stream: _clubs,
-            builder: (context, snapshot) {
+            builder: (BuildContext context, AsyncSnapshot<List<Organization>> snapshot) {
               if (snapshot.hasError) {
                 return Text('Could not load clubs: ${snapshot.error}');
               }
@@ -123,11 +123,11 @@ class _ClubEditTestPageState extends State<ClubEditTestPage> {
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
-              final clubs = snapshot.data!;
+              final List<Organization> clubs = snapshot.data!;
               if (clubs.isEmpty) return const Text('No clubs found.');
               return Column(
-                children: [
-                  for (final club in clubs)
+                children: <Widget>[
+                  for (final Organization club in clubs)
                     ListTile(
                       title: Text(club.name),
                       subtitle: Text(club.description,

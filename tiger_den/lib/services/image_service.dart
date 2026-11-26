@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tiger_den/models/event.dart';
+import 'package:tiger_den/models/organization.dart';
 import 'firestore_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -18,7 +20,7 @@ class ImageService {
   FirestoreService fireService = FirestoreService();
 
 
-  ///Disposes what is left over after using
+  ///Disposes what is left over after 
   Future<void> cleanUp() async{await destroyImageFolder();}
 
   ///Compresses image file and gives it a unique time based name
@@ -56,10 +58,10 @@ class ImageService {
       try {
         String? apiKey = dotenv.env['IMGBB_IMAGE_API_KEY']?.trim();
         if(apiKey == null) return null; 
-        final uri = Uri.parse('https://api.imgbb.com/1/upload?key=$apiKey');
+        final Uri uri = Uri.parse('https://api.imgbb.com/1/upload?key=$apiKey');
         if (image == null) return null;
 
-        final request = http.MultipartRequest('POST', uri);
+        final http.MultipartRequest request = http.MultipartRequest('POST', uri);
         request.files.add(
           await http.MultipartFile.fromPath(
             'image', 
@@ -67,8 +69,8 @@ class ImageService {
           ),
         );
         
-        final streamedResponse = await request.send();
-        final response = await http.Response.fromStream(streamedResponse);
+        final http.StreamedResponse streamedResponse = await request.send();
+        final http.Response response = await http.Response.fromStream(streamedResponse);
         print('Status code: ${response.statusCode}');
         print('Response body: ${response.body}'); 
 
@@ -88,8 +90,8 @@ class ImageService {
    ///Gets the image url from events
   Future<String> getEventImageURL(String id) async {
     try {
-      final ev = fireService.getEvent(id);
-      final event = await ev;
+      final Future<Event?> ev = fireService.getEvent(id);
+      final Event? event = await ev;
       return event!.imageUrl!;
     } catch (e){
       print("error: failure to grab event image url;");
@@ -99,8 +101,8 @@ class ImageService {
   ///Gets the image url from clubs
   Future<String> getClubImageURL(String id) async {
     try {
-      final cl = fireService.getOrganization(id);
-      final club = await cl;
+      final Future<Organization?> cl = fireService.getOrganization(id);
+      final Organization? club = await cl;
       return club!.bannerUrl!;
     } catch (e){
       print("error: failure to grab club image url;");

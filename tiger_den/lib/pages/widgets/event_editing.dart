@@ -34,7 +34,7 @@ class EventEditForm extends StatefulWidget {
 /// Stores the state and form data for EventEditForm
 class EventEditFormState extends State<EventEditForm> {
   /// The key used to validate this form
-  final eventFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> eventFormKey = GlobalKey<FormState>();
 
   /// The service used for image compression and upload
   ImageService imageService = ImageService();
@@ -49,7 +49,7 @@ class EventEditFormState extends State<EventEditForm> {
   Event? event;
 
   /// The current user's club memberships
-  List<Membership> userMemberships = [];
+  List<Membership> userMemberships = <Membership>[];
 
   bool isLoading = true;
   bool isSaving = false;
@@ -77,7 +77,7 @@ class EventEditFormState extends State<EventEditForm> {
   String? selectedClubId;
 
   /// The tags selected for this event
-  List<String> selectedTags = [];
+  List<String> selectedTags = <String>[];
 
   /// A NEW image picked while editing (null = keep the current image)
   XFile? selectedImage;
@@ -90,7 +90,7 @@ class EventEditFormState extends State<EventEditForm> {
 
   /// The clubs the current user owns or is an admin of
   List<Membership> get adminMemberships => userMemberships
-      .where((m) => m.role == OrgRole.owner || m.role == OrgRole.admin)
+      .where((Membership m) => m.role == OrgRole.owner || m.role == OrgRole.admin)
       .toList();
 
   /// Returns whether the current user manages at least one club
@@ -98,19 +98,19 @@ class EventEditFormState extends State<EventEditForm> {
 
   /// Only the creator, a host, or an owner/admin of the event's club can edit.
   bool canEdit() {
-    final e = event;
+    final Event? e = event;
     if (e == null) return false;
     if (e.createdBy == widget.currentUserId) return true;
     if (e.hostIds.contains(widget.currentUserId)) return true;
-    final orgId = e.organizationId;
-    return orgId != null && adminMemberships.any((m) => m.orgId == orgId);
+    final String? orgId = e.organizationId;
+    return orgId != null && adminMemberships.any((Membership m) => m.orgId == orgId);
   }
 
   /// Loads the event and the user's memberships, and fills in the form
   Future<void> loadInitialData() async {
     try {
-      final loaded = await firestoreService.getEvent(widget.eventId);
-      final memberships = await firestoreService
+      final Event? loaded = await firestoreService.getEvent(widget.eventId);
+      final List<Membership> memberships = await firestoreService
           .streamMyMemberships(widget.currentUserId)
           .first;
       if (!mounted) return;
@@ -156,14 +156,14 @@ class EventEditFormState extends State<EventEditForm> {
   /// Selects an image from the gallery and compresses it
   Future<void> pickImageFromGalleryAndDisplay() async {
     try {
-      final image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
-      final compressed = await imageService.compressFile(image);
+      final XFile? compressed = await imageService.compressFile(image);
       if (compressed == null) {
         showMessage('Could not compress that image.');
         return;
       }
-      final size = await compressed.length();
+      final int size = await compressed.length();
       if (size >= 100000) {
         showMessage('Compressed size: $size bytes. File too large to upload.');
         return;
@@ -197,16 +197,16 @@ class EventEditFormState extends State<EventEditForm> {
         }
       }
 
-      final startDate = selectedStartDate!;
-      final endDate = selectedEndDate ?? startDate;
-      final startDateTime = DateTime(
+      final DateTime startDate = selectedStartDate!;
+      final DateTime endDate = selectedEndDate ?? startDate;
+      final DateTime startDateTime = DateTime(
         startDate.year,
         startDate.month,
         startDate.day,
         allDayChecked ? 0 : (selectedStartTime?.hour ?? 0),
         allDayChecked ? 0 : (selectedStartTime?.minute ?? 0),
       );
-      final endDateTime = DateTime(
+      final DateTime endDateTime = DateTime(
         endDate.year,
         endDate.month,
         endDate.day,
@@ -223,7 +223,7 @@ class EventEditFormState extends State<EventEditForm> {
       String? orgName;
       if (category == 'official' && selectedClubId != null) {
         orgId = selectedClubId;
-        final match = userMemberships.where((m) => m.orgId == orgId);
+        final Iterable<Membership> match = userMemberships.where((Membership m) => m.orgId == orgId);
         orgName = match.isNotEmpty
             ? match.first.orgName
             : event!.organizationName; // keep the existing name copy
@@ -231,7 +231,7 @@ class EventEditFormState extends State<EventEditForm> {
 
       // Only the fields the form edits. createdBy, attendeeCount, status and
       // createdAt are left alone, so the event keeps its owner and RSVPs.
-      final changes = <String, dynamic>{
+      final Map<String, dynamic> changes = <String, dynamic>{
         'title': titleController.text.trim(),
         'description': descriptionController.text.trim(),
         'category': category,
@@ -259,7 +259,7 @@ class EventEditFormState extends State<EventEditForm> {
       await updateSearchIndex();
 
       // Refresh so the page shows what's now saved.
-      final saved = await firestoreService.getEvent(widget.eventId);
+      final Event? saved = await firestoreService.getEvent(widget.eventId);
       if (mounted) {
         setState(() {
           event = saved ?? event;
@@ -310,7 +310,7 @@ class EventEditFormState extends State<EventEditForm> {
 
   /// Changes the checkbox color based on the current widget state
   Color checkBoxGetColor(Set<WidgetState> states) {
-    const interactiveStates = <WidgetState>{
+    const Set<WidgetState> interactiveStates = <WidgetState>{
       WidgetState.pressed,
       WidgetState.hovered,
       WidgetState.focused,
@@ -342,7 +342,7 @@ class EventEditFormState extends State<EventEditForm> {
     if (selectedImage != null) {
       return Image.file(File(selectedImage!.path));
     }
-    final url = event?.imageUrl;
+    final String? url = event?.imageUrl;
     if (url != null && url.isNotEmpty) {
       return Image.network(
         url,
@@ -387,16 +387,16 @@ class EventEditFormState extends State<EventEditForm> {
   }
 
   Widget buildDatePicker({required bool isStart}) {
-    final selected = isStart ? selectedStartDate : selectedEndDate;
+    final DateTime? selected = isStart ? selectedStartDate : selectedEndDate;
     return FormField<DateTime>(
       validator: (_) => selected == null ? 'You must fill this out.' : null,
-      builder: (state) {
-        final buttonText = selected == null
+      builder: (FormFieldState<DateTime> state) {
+        final String buttonText = selected == null
             ? (isStart ? 'Start Date' : 'End Date')
             : '${selected.month}/${selected.day}/${selected.year}';
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showDatePicker(
+            final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: selected ?? DateTime.now(),
               firstDate: DateTime(2000),
@@ -421,7 +421,7 @@ class EventEditFormState extends State<EventEditForm> {
 
   Widget buildDateRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(child: buildDatePicker(isStart: true)),
         Expanded(child: buildDatePicker(isStart: false)),
       ],
@@ -430,7 +430,7 @@ class EventEditFormState extends State<EventEditForm> {
 
   Widget buildAllDayCheckbox() {
     return Row(
-      children: [
+      children: <Widget>[
         Checkbox(
           checkColor: Colors.white,
           fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
@@ -444,18 +444,18 @@ class EventEditFormState extends State<EventEditForm> {
   }
 
   Widget buildTimePicker({required bool isStart}) {
-    final selected = isStart ? selectedStartTime : selectedEndTime;
+    final TimeOfDay? selected = isStart ? selectedStartTime : selectedEndTime;
     return FormField<TimeOfDay>(
       validator: (_) => (!allDayChecked && selected == null)
           ? 'You must fill this out.'
           : null,
-      builder: (state) {
-        final buttonText = selected == null
+      builder: (FormFieldState<TimeOfDay> state) {
+        final String buttonText = selected == null
             ? (isStart ? 'Start Time' : 'End Time')
             : selected.format(state.context);
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showTimePicker(
+            final TimeOfDay? picked = await showTimePicker(
               context: context,
               initialTime: selected ?? TimeOfDay.now(),
             );
@@ -479,7 +479,7 @@ class EventEditFormState extends State<EventEditForm> {
   Widget buildTimeRow() {
     if (allDayChecked) return const SizedBox.shrink();
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(child: buildTimePicker(isStart: true)),
         Expanded(child: buildTimePicker(isStart: false)),
       ],
@@ -494,7 +494,7 @@ class EventEditFormState extends State<EventEditForm> {
         labelText: 'Max Capacity',
         border: OutlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -508,7 +508,7 @@ class EventEditFormState extends State<EventEditForm> {
 
   Widget buildVirtualRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Checkbox(
           checkColor: Colors.white,
           fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
@@ -543,7 +543,7 @@ class EventEditFormState extends State<EventEditForm> {
       onSelected: (String? value) {
         if (value != null) setState(() => category = value);
       },
-      dropdownMenuEntries: const [
+      dropdownMenuEntries: const <DropdownMenuEntry<String>>[
         DropdownMenuEntry<String>(
           value: 'official',
           label: 'Event for Official Organization or Club',
@@ -562,9 +562,9 @@ class EventEditFormState extends State<EventEditForm> {
     return FormField<String>(
       validator: (_) =>
           selectedClubId == null ? 'Select the club this event is for' : null,
-      builder: (state) => Column(
+      builder: (FormFieldState<String> state) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <Widget>[
           DropdownMenu<String>(
             expandedInsets: EdgeInsets.zero,
             initialSelection: selectedClubId,
@@ -575,8 +575,8 @@ class EventEditFormState extends State<EventEditForm> {
                 setState(() => selectedClubId = value);
               }
             },
-            dropdownMenuEntries: [
-              for (final m in adminMemberships)
+            dropdownMenuEntries: <DropdownMenuEntry<String>>[
+              for (final Membership m in adminMemberships)
                 DropdownMenuEntry<String>(value: m.orgId, label: m.orgName),
             ],
           ),
@@ -594,7 +594,7 @@ class EventEditFormState extends State<EventEditForm> {
       fieldDecoration: FieldDecoration(hintText: 'Select Tags'),
       items: tagService
           .fetchTags()
-          .map((tag) => DropdownItem(
+          .map((String tag) => DropdownItem(
                 label: tag,
                 value: tag,
                 selected: selectedTags.contains(tag),

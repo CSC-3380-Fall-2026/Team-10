@@ -27,7 +27,7 @@ class EventCreationForm extends StatefulWidget {
 ///Stores the state and form data for EventCreationForm
 class EventCreationFormState extends State<EventCreationForm> {
   ///The key used to validate this form
-  final eventFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> eventFormKey = GlobalKey<FormState>();
   ///The service used for image compression and modification
   ImageService imageService = ImageService();
   ///The service used to communicate with Cloud Firestore
@@ -75,11 +75,11 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///The selected event category
   String? selectedCategory;
   ///The organizations managed by the current user
-  List<String> orgList = []; 
+  List<String> orgList = <String>[]; 
   ///The current user's organization memberships
-  List<Membership> userMemberships = [];
+  List<Membership> userMemberships = <Membership>[];
   ///The tags selected for this event
-  List<String> selectedTags = [];
+  List<String> selectedTags = <String>[];
   
   ///The image selected for the event
   XFile? selectedImage;
@@ -120,7 +120,7 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Returns whether the current user is an officer or owner of an organization
   bool isAdmin(){
-    for (final m in userMemberships) {
+    for (final Membership m in userMemberships) {
       if (m.role == OrgRole.owner || m.role == OrgRole.admin) {
         return true;
       }
@@ -130,8 +130,8 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Retrieves the list of organizations the current user manages
   List<String> retrieveAdminClubs(){
-    List<String> adminClubs = [];
-    for (final m in userMemberships) {
+    List<String> adminClubs = <String>[];
+    for (final Membership m in userMemberships) {
       if (m.role == OrgRole.owner || m.role == OrgRole.admin) {
         adminClubs.add(m.orgName);
       }
@@ -155,8 +155,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Loads the initial user profile and organization memberships from the database
   Future<void> loadInitialData() async {
     try {
-      final user = await firestoreService.getUser(widget.currentUserId);
-      final membershipsSnap = await firestoreService.streamMyMemberships(widget.currentUserId).first;
+      final AppUser? user = await firestoreService.getUser(widget.currentUserId);
+      final List<Membership> membershipsSnap = await firestoreService.streamMyMemberships(widget.currentUserId).first;
       if (mounted) {
         setState(() {
           currentUser = user;
@@ -200,11 +200,11 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
 
     try {
-      final startDate = selectedStartDate ?? DateTime.now();
-      final endDate = selectedEndDate ?? startDate;
+      final DateTime startDate = selectedStartDate ?? DateTime.now();
+      final DateTime endDate = selectedEndDate ?? startDate;
       
-      final startTime = selectedStartTime;
-      final startDateTime = DateTime(
+      final TimeOfDay? startTime = selectedStartTime;
+      final DateTime startDateTime = DateTime(
         startDate.year,
         startDate.month,
         startDate.day,
@@ -212,8 +212,8 @@ class EventCreationFormState extends State<EventCreationForm> {
         allDayChecked ? 0 : (startTime != null ? startTime.minute : 0),
       );
 
-      final endTime = selectedEndTime;
-      final endDateTime = DateTime(
+      final TimeOfDay? endTime = selectedEndTime;
+      final DateTime endDateTime = DateTime(
         endDate.year,
         endDate.month,
         endDate.day,
@@ -223,8 +223,8 @@ class EventCreationFormState extends State<EventCreationForm> {
 
       String? targetOrgId;
       if (category == "official" && selectedClub != null) {
-          var match = userMemberships.first; 
-          for (final m in userMemberships) {
+          Membership match = userMemberships.first; 
+          for (final Membership m in userMemberships) {
             if (m.orgName == selectedClub) {
               match = m;
               break;
@@ -232,7 +232,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           }
           targetOrgId = match.orgId;
         }
-      final newEvent = Event(
+      final Event newEvent = Event(
         id: '', 
         organizationId: targetOrgId,
         createdBy: currentUser!.id,
@@ -301,7 +301,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         labelText: 'Event Title',
         border: UnderlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -331,7 +331,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         labelText: 'Event Description',
         border: UnderlineInputBorder(),  
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -349,7 +349,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         labelText: 'Event Address',
         border: OutlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -361,13 +361,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the start date picker field
   Widget buildStartDatePicker() {
     return FormField<DateTime>(
-      validator: (value) {
+      validator: (DateTime? value) {
         if (selectedStartDate == null) {
           return 'You must fill this out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<DateTime> state) {
         String buttonText;
         if (selectedStartDate == null) {
           buttonText = 'Start Date';
@@ -376,7 +376,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         }
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showDatePicker(
+            final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: selectedStartDate ?? DateTime.now(),
               firstDate: DateTime(2000),
@@ -398,13 +398,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the end date picker field
   Widget buildEndDatePicker() {
     return FormField<DateTime>(
-      validator: (value) {
+      validator: (DateTime? value) {
         if (selectedEndDate == null) {
           return 'You must fill this out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<DateTime> state) {
         String buttonText;
         if (selectedEndDate == null) {
           buttonText = 'End Date';
@@ -413,7 +413,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         }
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showDatePicker(
+            final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: selectedEndDate ?? DateTime.now(),
               firstDate: DateTime(2000),
@@ -435,7 +435,7 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the row containing both start and end date pickers
   Widget buildDateRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(
           child: buildStartDatePicker(),
         ),
@@ -463,13 +463,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the start time picker field
   Widget buildStartTimePicker() {
     return FormField<TimeOfDay>(
-      validator: (value) {
+      validator: (TimeOfDay? value) {
         if (!allDayChecked && selectedStartTime == null) {
           return 'You must fill this out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<TimeOfDay> state) {
         String buttonText;
         if (selectedStartTime == null) {
           buttonText = 'Start Time';
@@ -479,7 +479,7 @@ class EventCreationFormState extends State<EventCreationForm> {
 
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showTimePicker(
+            final TimeOfDay? picked = await showTimePicker(
               context: context,
               initialTime: selectedStartTime ?? TimeOfDay.now(),
             );
@@ -499,13 +499,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the end time picker field
   Widget buildEndTimePicker() {
     return FormField<TimeOfDay>(
-      validator: (value) {
+      validator: (TimeOfDay? value) {
         if (!allDayChecked && selectedEndTime == null) {
           return 'You must fill this out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<TimeOfDay> state) {
         String buttonText;
         if (selectedEndTime == null) {
           buttonText = 'End Time';
@@ -514,7 +514,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         }
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showTimePicker(
+            final TimeOfDay? picked = await showTimePicker(
               context: context,
               initialTime: selectedEndTime ?? TimeOfDay.now(),
             );
@@ -537,7 +537,7 @@ class EventCreationFormState extends State<EventCreationForm> {
       return SizedBox.shrink();
     }
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(
           child: buildStartTimePicker(),
         ),
@@ -557,7 +557,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         labelText: 'Max Capacity',
         border: OutlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -572,7 +572,7 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the virtual event checkbox and the conditional meeting link input field
   Widget buildVirtualRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(
           child: Checkbox(
             checkColor: Colors.white,
@@ -594,7 +594,7 @@ class EventCreationFormState extends State<EventCreationForm> {
                 labelText: 'Meeting Link',
                 border: OutlineInputBorder(),
               ),
-              validator: (value) {
+              validator: (String? value) {
                 if ((value == null || value.isEmpty)) {
                   return 'You must fill this section out';
                 }
@@ -627,7 +627,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           });
         }
       },
-      dropdownMenuEntries: [
+      dropdownMenuEntries: <DropdownMenuEntry<String>>[
         DropdownMenuEntry<String>(
           value: 'official',
           label: 'Event for Official Organization or Club',
@@ -656,7 +656,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           });
         }
       }, 
-      dropdownMenuEntries: orgList.map((value) {
+      dropdownMenuEntries: orgList.map((String value) {
         return DropdownMenuEntry<String>(
           value: value.toString(),
           label: value.toString(),
@@ -672,7 +672,7 @@ class EventCreationFormState extends State<EventCreationForm> {
       fieldDecoration: FieldDecoration(
         hintText: 'Select Tags',
       ),
-      items: tagService.fetchTags().map((item) => DropdownItem(
+      items: tagService.fetchTags().map((String item) => DropdownItem(
         label: item, 
         value: item,)).toList(),
       onSelectionChange: (List<String> selectedItems) {

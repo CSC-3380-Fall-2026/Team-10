@@ -375,7 +375,7 @@ class _ProfilePageState extends State<ProfilePage> {
   ///builds message for error and has a button that signs user out if applicable and then takes them to the login screen
   Widget _buildMessageOut(String text) {
     return Column(
-      children: [
+      children: <Widget>[
         Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -393,7 +393,7 @@ class _ProfilePageState extends State<ProfilePage> {
   /// Button for if profile fails to load;
   Widget _buildOutButton(){
     return Column(
-      children: [
+      children: <Widget>[
         Center(
           child: Text(
             "If you see the above message and do not expect it, try clicking this button and logging in again.",
@@ -455,8 +455,8 @@ class _ProfilePageState extends State<ProfilePage> {
     if (mounted){
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
-          pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) => const LoginPage(),
+          transitionsBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 150),
         ),

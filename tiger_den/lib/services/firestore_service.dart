@@ -43,7 +43,7 @@ class FirestoreService {
 
   /// Creates the profile document for a user who just signed up.
   Future<void> createUserProfile(AppUser user) {
-    return _users.doc(user.id).set({
+    return _users.doc(user.id).set(<String, dynamic>{
       ...user.toMap(),
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -51,7 +51,7 @@ class FirestoreService {
   }
 
   Future<AppUser?> getUser(String uid) async {
-    final doc = await _users.doc(uid).get();
+    final DocumentSnapshot<Map<String, dynamic>> doc = await _users.doc(uid).get();
     return doc.exists ? AppUser.fromDoc(doc) : null;
   }
 
@@ -59,12 +59,12 @@ class FirestoreService {
   Stream<AppUser?> streamUser(String uid) => _users
       .doc(uid)
       .snapshots()
-      .map((doc) => doc.exists ? AppUser.fromDoc(doc) : null);
+      .map((DocumentSnapshot<Map<String, dynamic>> doc) => doc.exists ? AppUser.fromDoc(doc) : null);
 
   /// Updates only the fields you pass in, e.g.
   ///   updateUser(uid, {'bio': 'New bio', 'major': 'CS'});
   Future<void> updateUser(String uid, Map<String, dynamic> changes) {
-    return _users.doc(uid).update({
+    return _users.doc(uid).update(<Object, Object?>{
       ...changes,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -80,19 +80,19 @@ class FirestoreService {
   /// A "batch" makes all the writes happen together: either every one
   /// succeeds or none do, so the data never ends up half-saved.
   Future<String> createOrganization(Organization org, AppUser owner) async {
-    final orgRef = _orgs.doc(); // Firestore picks a random ID
-    final batch = _db.batch();
+    final DocumentReference<Map<String, dynamic>> orgRef = _orgs.doc(); // Firestore picks a random ID
+    final WriteBatch batch = _db.batch();
 
-    batch.set(orgRef, {
+    batch.set(orgRef, <String, dynamic>{
       ...org.toMap(),
       'ownerId': owner.id,
-      'adminIds': [owner.id],
+      'adminIds': <String>[owner.id],
       'memberCount': 1,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    batch.set(_orgMembers(orgRef.id).doc(owner.id), {
+    batch.set(_orgMembers(orgRef.id).doc(owner.id), <String, dynamic>{
       ...OrgMember(
         userId: owner.id,
         displayName: owner.displayName,
@@ -101,7 +101,7 @@ class FirestoreService {
       'joinedAt': FieldValue.serverTimestamp(),
     });
 
-    batch.set(_userMemberships(owner.id).doc(orgRef.id), {
+    batch.set(_userMemberships(owner.id).doc(orgRef.id), <String, dynamic>{
       ...Membership(orgId: orgRef.id, orgName: org.name, role: OrgRole.owner)
           .toMap(),
       'joinedAt': FieldValue.serverTimestamp(),
@@ -112,23 +112,23 @@ class FirestoreService {
   }
 
   Future<Organization?> getOrganization(String orgId) async {
-    final doc = await _orgs.doc(orgId).get();
+    final DocumentSnapshot<Map<String, dynamic>> doc = await _orgs.doc(orgId).get();
     return doc.exists ? Organization.fromDoc(doc) : null;
   }
 
   Stream<Organization?> streamOrganization(String orgId) => _orgs
       .doc(orgId)
       .snapshots()
-      .map((doc) => doc.exists ? Organization.fromDoc(doc) : null);
+      .map((DocumentSnapshot<Map<String, dynamic>> doc) => doc.exists ? Organization.fromDoc(doc) : null);
 
   /// All public clubs, alphabetical. For a "Browse Clubs" screen.
   Stream<List<Organization>> streamPublicOrganizations() => _orgs
       .where('isPublic', isEqualTo: true)
       .snapshots()
-      .map((snap) {
-        final list = snap.docs.map(Organization.fromDoc).toList();
+      .map((QuerySnapshot<Map<String, dynamic>> snap) {
+        final List<Organization> list = snap.docs.map(Organization.fromDoc).toList();
         list.sort(
-            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            (Organization a, Organization b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
         return list;
       });
 
@@ -145,19 +145,19 @@ class FirestoreService {
   /// When the name is unchanged, nothing extra is read or written.
   Future<void> updateOrganization(
       String orgId, Map<String, dynamic> changes) async {
-    final orgRef = _orgs.doc(orgId);
+    final DocumentReference<Map<String, dynamic>> orgRef = _orgs.doc(orgId);
 
     final newName = changes['name'];
     String? oldName;
     if (newName is String) {
-      final current = await orgRef.get();
+      final DocumentSnapshot<Map<String, dynamic>> current = await orgRef.get();
       if (!current.exists) {
         throw StateError('Club $orgId does not exist.');
       }
       oldName = current.data()?['name'] as String?;
     }
 
-    await orgRef.update({
+    await orgRef.update(<Object, Object?>{
       ...changes,
       'updatedAt': FieldValue.serverTimestamp(),
     });
@@ -169,22 +169,22 @@ class FirestoreService {
 
   /// Rewrites every stored copy of a club's name after it's renamed.
   Future<void> _renameClubCopies(String orgId, String newName) async {
-    final events =
+    final QuerySnapshot<Map<String, dynamic>> events =
         await _events.where('organizationId', isEqualTo: orgId).get();
-    final members = await _orgMembers(orgId).get();
+    final QuerySnapshot<Map<String, dynamic>> members = await _orgMembers(orgId).get();
 
-    final refsAndChanges = <MapEntry<DocumentReference, Map<String, dynamic>>>[
-      for (final doc in events.docs)
-        MapEntry(doc.reference, {'organizationName': newName}),
-      for (final doc in members.docs)
-        MapEntry(_userMemberships(doc.id).doc(orgId), {'orgName': newName}),
+    final List<MapEntry<DocumentReference<Object?>, Map<String, dynamic>>> refsAndChanges = <MapEntry<DocumentReference, Map<String, dynamic>>>[
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in events.docs)
+        MapEntry(doc.reference, <String, dynamic>{'organizationName': newName}),
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in members.docs)
+        MapEntry(_userMemberships(doc.id).doc(orgId), <String, dynamic>{'orgName': newName}),
     ];
 
     // A Firestore batch holds at most 500 writes, so commit in chunks.
-    const chunkSize = 450;
-    for (var i = 0; i < refsAndChanges.length; i += chunkSize) {
-      final batch = _db.batch();
-      for (final entry in refsAndChanges.skip(i).take(chunkSize)) {
+    const int chunkSize = 450;
+    for (int i = 0; i < refsAndChanges.length; i += chunkSize) {
+      final WriteBatch batch = _db.batch();
+      for (final MapEntry<DocumentReference<Object?>, Map<String, dynamic>> entry in refsAndChanges.skip(i).take(chunkSize)) {
         // set+merge so a missing membership copy is fixed instead of failing.
         batch.set(entry.key, entry.value, SetOptions(merge: true));
       }
@@ -195,16 +195,16 @@ class FirestoreService {
   /// Adds [user] to a club. Writes to both the club's member list
   /// and the user's own "My Clubs" list, and bumps memberCount.
   Future<void> joinOrganization(Organization org, AppUser user) async {
-    final memberRef = _orgMembers(org.id).doc(user.id);
+    final DocumentReference<Map<String, dynamic>> memberRef = _orgMembers(org.id).doc(user.id);
 
-    await _db.runTransaction((tx) async {
-      final existing = await tx.get(memberRef);
+    await _db.runTransaction((Transaction tx) async {
+      final DocumentSnapshot<Map<String, dynamic>> existing = await tx.get(memberRef);
       if (existing.exists) return; // already a member, nothing to do
 
-      final status =
+      final MemberStatus status =
           org.requiresApproval ? MemberStatus.pending : MemberStatus.active;
 
-      tx.set(memberRef, {
+      tx.set(memberRef, <String, dynamic>{
         ...OrgMember(
           userId: user.id,
           displayName: user.displayName,
@@ -212,47 +212,47 @@ class FirestoreService {
         ).toMap(),
         'joinedAt': FieldValue.serverTimestamp(),
       });
-      tx.set(_userMemberships(user.id).doc(org.id), {
+      tx.set(_userMemberships(user.id).doc(org.id), <String, dynamic>{
         ...Membership(orgId: org.id, orgName: org.name, status: status)
             .toMap(),
         'joinedAt': FieldValue.serverTimestamp(),
       });
       if (status == MemberStatus.active) {
-        tx.update(_orgs.doc(org.id), {'memberCount': FieldValue.increment(1)});
+        tx.update(_orgs.doc(org.id), <Object, Object?>{'memberCount': FieldValue.increment(1)});
       }
     });
   }
 
   Future<void> leaveOrganization(String orgId, String uid) async {
-    final memberRef = _orgMembers(orgId).doc(uid);
+    final DocumentReference<Map<String, dynamic>> memberRef = _orgMembers(orgId).doc(uid);
 
-    await _db.runTransaction((tx) async {
-      final existing = await tx.get(memberRef);
+    await _db.runTransaction((Transaction tx) async {
+      final DocumentSnapshot<Map<String, dynamic>> existing = await tx.get(memberRef);
       if (!existing.exists) return;
 
-      final wasActive = existing.data()?['status'] != MemberStatus.pending.name;
+      final bool wasActive = existing.data()?['status'] != MemberStatus.pending.name;
 
       tx.delete(memberRef);
       tx.delete(_userMemberships(uid).doc(orgId));
       if (wasActive) {
-        tx.update(_orgs.doc(orgId), {'memberCount': FieldValue.increment(-1)});
+        tx.update(_orgs.doc(orgId), <Object, Object?>{'memberCount': FieldValue.increment(-1)});
       }
     });
   }
 
   /// Approves a pending join request (for clubs with requiresApproval).
   Future<void> approveMember(String orgId, String uid) async {
-    final memberRef = _orgMembers(orgId).doc(uid);
+    final DocumentReference<Map<String, dynamic>> memberRef = _orgMembers(orgId).doc(uid);
 
-    await _db.runTransaction((tx) async {
-      final existing = await tx.get(memberRef);
+    await _db.runTransaction((Transaction tx) async {
+      final DocumentSnapshot<Map<String, dynamic>> existing = await tx.get(memberRef);
       if (!existing.exists) return;
       if (existing.data()?['status'] != MemberStatus.pending.name) return;
 
-      tx.update(memberRef, {'status': MemberStatus.active.name});
+      tx.update(memberRef, <Object, Object?>{'status': MemberStatus.active.name});
       tx.update(_userMemberships(uid).doc(orgId),
-          {'status': MemberStatus.active.name});
-      tx.update(_orgs.doc(orgId), {'memberCount': FieldValue.increment(1)});
+          <Object, Object?>{'status': MemberStatus.active.name});
+      tx.update(_orgs.doc(orgId), <Object, Object?>{'memberCount': FieldValue.increment(1)});
     });
   }
 
@@ -260,13 +260,13 @@ class FirestoreService {
   /// Keeps the club's adminIds list in sync so it can be used for
   /// permission checks ("can this user edit this club?").
   Future<void> setMemberRole(String orgId, String uid, OrgRole role) async {
-    final batch = _db.batch();
-    batch.update(_orgMembers(orgId).doc(uid), {'role': role.name});
-    batch.update(_userMemberships(uid).doc(orgId), {'role': role.name});
-    batch.update(_orgs.doc(orgId), {
+    final WriteBatch batch = _db.batch();
+    batch.update(_orgMembers(orgId).doc(uid), <String, String>{'role': role.name});
+    batch.update(_userMemberships(uid).doc(orgId), <String, String>{'role': role.name});
+    batch.update(_orgs.doc(orgId), <String, FieldValue>{
       'adminIds': role == OrgRole.member
-          ? FieldValue.arrayRemove([uid])
-          : FieldValue.arrayUnion([uid]),
+          ? FieldValue.arrayRemove(<dynamic>[uid])
+          : FieldValue.arrayUnion(<dynamic>[uid]),
       'updatedAt': FieldValue.serverTimestamp(),
     });
     await batch.commit();
@@ -275,13 +275,13 @@ class FirestoreService {
   /// Everyone in a club, for a members list screen.
   Stream<List<OrgMember>> streamOrgMembers(String orgId) => _orgMembers(orgId)
       .snapshots()
-      .map((snap) => snap.docs.map(OrgMember.fromDoc).toList());
+      .map((QuerySnapshot<Map<String, dynamic>> snap) => snap.docs.map(OrgMember.fromDoc).toList());
 
   /// The clubs a user belongs to, for a "My Clubs" screen.
   Stream<List<Membership>> streamMyMemberships(String uid) =>
       _userMemberships(uid)
           .snapshots()
-          .map((snap) => snap.docs.map(Membership.fromDoc).toList());
+          .map((QuerySnapshot<Map<String, dynamic>> snap) => snap.docs.map(Membership.fromDoc).toList());
 
   // ===========================================================================
   // EVENTS
@@ -289,7 +289,7 @@ class FirestoreService {
 
   /// Creates an event and returns its new ID.
   Future<String> createEvent(Event event) async {
-    final ref = await _events.add({
+    final DocumentReference<Map<String, dynamic>> ref = await _events.add(<String, dynamic>{
       ...event.toMap(),
       'attendeeCount': 0,
       'createdAt': FieldValue.serverTimestamp(),
@@ -299,14 +299,14 @@ class FirestoreService {
   }
 
   Future<Event?> getEvent(String eventId) async {
-    final doc = await _events.doc(eventId).get();
+    final DocumentSnapshot<Map<String, dynamic>> doc = await _events.doc(eventId).get();
     return doc.exists ? Event.fromDoc(doc) : null;
   }
 
   Stream<Event?> streamEvent(String eventId) => _events
       .doc(eventId)
       .snapshots()
-      .map((doc) => doc.exists ? Event.fromDoc(doc) : null);
+      .map((DocumentSnapshot<Map<String, dynamic>> doc) => doc.exists ? Event.fromDoc(doc) : null);
 
   /// Public, not-cancelled events that haven't started yet, soonest first.
   /// For the main feed / home screen.
@@ -314,9 +314,9 @@ class FirestoreService {
       .where('startTime', isGreaterThanOrEqualTo: Timestamp.now())
       .orderBy('startTime')
       .snapshots()
-      .map((snap) => snap.docs
+      .map((QuerySnapshot<Map<String, dynamic>> snap) => snap.docs
           .map(Event.fromDoc)
-          .where((e) =>
+          .where((Event e) =>
               e.visibility == EventVisibility.public &&
               e.status != EventStatus.cancelled)
           .toList());
@@ -325,9 +325,9 @@ class FirestoreService {
   Stream<List<Event>> streamOrgEvents(String orgId) => _events
       .where('organizationId', isEqualTo: orgId)
       .snapshots()
-      .map((snap) {
-        final list = snap.docs.map(Event.fromDoc).toList();
-        list.sort((a, b) => a.startTime.compareTo(b.startTime));
+      .map((QuerySnapshot<Map<String, dynamic>> snap) {
+        final List<Event> list = snap.docs.map(Event.fromDoc).toList();
+        list.sort((Event a, Event b) => a.startTime.compareTo(b.startTime));
         return list;
       });
 
@@ -335,9 +335,9 @@ class FirestoreService {
   Stream<List<Event>> streamEventsCreatedBy(String uid) => _events
       .where('createdBy', isEqualTo: uid)
       .snapshots()
-      .map((snap) {
-        final list = snap.docs.map(Event.fromDoc).toList();
-        list.sort((a, b) => a.startTime.compareTo(b.startTime));
+      .map((QuerySnapshot<Map<String, dynamic>> snap) {
+        final List<Event> list = snap.docs.map(Event.fromDoc).toList();
+        list.sort((Event a, Event b) => a.startTime.compareTo(b.startTime));
         return list;
       });
 
@@ -353,12 +353,12 @@ class FirestoreService {
   /// Other changes (description, tags, capacity...) cost no extra writes.
   Future<void> updateEvent(
       String eventId, Map<String, dynamic> changes) async {
-    await _events.doc(eventId).update({
+    await _events.doc(eventId).update(<Object, Object?>{
       ...changes,
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
-    final calendarChanges = _calendarCopyFields(changes);
+    final Map<String, dynamic> calendarChanges = _calendarCopyFields(changes);
     if (calendarChanges.isNotEmpty) {
       await _updateAttendeeCalendars(eventId, calendarChanges);
     }
@@ -368,8 +368,8 @@ class FirestoreService {
   /// renamed to how CalendarEntry stores them.
   static Map<String, dynamic> _calendarCopyFields(
       Map<String, dynamic> eventChanges) {
-    final result = <String, dynamic>{};
-    for (final field in const ['title', 'startTime', 'endTime', 'allDay']) {
+    final Map<String, dynamic> result = <String, dynamic>{};
+    for (final String field in const <String>['title', 'startTime', 'endTime', 'allDay']) {
       if (eventChanges.containsKey(field)) result[field] = eventChanges[field];
     }
     final location = eventChanges['location'];
@@ -383,17 +383,17 @@ class FirestoreService {
   /// "going" or "interested" (people who said "not going" have no copy).
   Future<void> _updateAttendeeCalendars(
       String eventId, Map<String, dynamic> calendarChanges) async {
-    final attendees = await _eventAttendees(eventId).get();
-    final uids = attendees.docs
-        .where((doc) => doc.data()['status'] != RsvpStatus.notGoing.name)
-        .map((doc) => doc.id)
+    final QuerySnapshot<Map<String, dynamic>> attendees = await _eventAttendees(eventId).get();
+    final List<String> uids = attendees.docs
+        .where((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.data()['status'] != RsvpStatus.notGoing.name)
+        .map((QueryDocumentSnapshot<Map<String, dynamic>> doc) => doc.id)
         .toList();
 
     // A Firestore batch holds at most 500 writes, so commit in chunks.
-    const chunkSize = 450;
-    for (var i = 0; i < uids.length; i += chunkSize) {
-      final batch = _db.batch();
-      for (final uid in uids.skip(i).take(chunkSize)) {
+    const int chunkSize = 450;
+    for (int i = 0; i < uids.length; i += chunkSize) {
+      final WriteBatch batch = _db.batch();
+      for (final String uid in uids.skip(i).take(chunkSize)) {
         batch.set(_userCalendar(uid).doc(eventId), calendarChanges,
             SetOptions(merge: true));
       }
@@ -404,14 +404,14 @@ class FirestoreService {
   /// Marks an event cancelled. (Keeps it in the database so attendees
   /// can still see "Cancelled" instead of it just vanishing.)
   Future<void> cancelEvent(String eventId) =>
-      updateEvent(eventId, {'status': EventStatus.cancelled.name});
+      updateEvent(eventId, <String, dynamic>{'status': EventStatus.cancelled.name});
 
   /// Permanently deletes an event. Note: Firestore does NOT delete
   /// subcollections automatically, so this removes attendees first.
   Future<void> deleteEvent(String eventId) async {
-    final attendees = await _eventAttendees(eventId).get();
-    final batch = _db.batch();
-    for (final doc in attendees.docs) {
+    final QuerySnapshot<Map<String, dynamic>> attendees = await _eventAttendees(eventId).get();
+    final WriteBatch batch = _db.batch();
+    for (final QueryDocumentSnapshot<Map<String, dynamic>> doc in attendees.docs) {
       batch.delete(doc.reference);
       batch.delete(_userCalendar(doc.id).doc(eventId));
     }
@@ -427,16 +427,16 @@ class FirestoreService {
   /// Also adds the event to the user's calendar, and keeps
   /// attendeeCount accurate (it counts only people who are "going").
   Future<void> rsvp(Event event, AppUser user, RsvpStatus status) async {
-    final attendeeRef = _eventAttendees(event.id).doc(user.id);
-    final calendarRef = _userCalendar(user.id).doc(event.id);
+    final DocumentReference<Map<String, dynamic>> attendeeRef = _eventAttendees(event.id).doc(user.id);
+    final DocumentReference<Map<String, dynamic>> calendarRef = _userCalendar(user.id).doc(event.id);
 
-    await _db.runTransaction((tx) async {
-      final existing = await tx.get(attendeeRef);
-      final wasGoing =
+    await _db.runTransaction((Transaction tx) async {
+      final DocumentSnapshot<Map<String, dynamic>> existing = await tx.get(attendeeRef);
+      final bool wasGoing =
           existing.exists && existing.data()?['status'] == RsvpStatus.going.name;
-      final isGoing = status == RsvpStatus.going;
+      final bool isGoing = status == RsvpStatus.going;
 
-      tx.set(attendeeRef, {
+      tx.set(attendeeRef, <String, dynamic>{
         ...Attendee(
           userId: user.id,
           displayName: user.displayName,
@@ -465,29 +465,29 @@ class FirestoreService {
 
       if (isGoing && !wasGoing) {
         tx.update(_events.doc(event.id),
-            {'attendeeCount': FieldValue.increment(1)});
+            <Object, Object?>{'attendeeCount': FieldValue.increment(1)});
       } else if (!isGoing && wasGoing) {
         tx.update(_events.doc(event.id),
-            {'attendeeCount': FieldValue.increment(-1)});
+            <Object, Object?>{'attendeeCount': FieldValue.increment(-1)});
       }
     });
   }
 
   /// Removes a user's RSVP entirely.
   Future<void> cancelRsvp(String eventId, String uid) async {
-    final attendeeRef = _eventAttendees(eventId).doc(uid);
+    final DocumentReference<Map<String, dynamic>> attendeeRef = _eventAttendees(eventId).doc(uid);
 
-    await _db.runTransaction((tx) async {
-      final existing = await tx.get(attendeeRef);
+    await _db.runTransaction((Transaction tx) async {
+      final DocumentSnapshot<Map<String, dynamic>> existing = await tx.get(attendeeRef);
       if (!existing.exists) return;
 
-      final wasGoing = existing.data()?['status'] == RsvpStatus.going.name;
+      final bool wasGoing = existing.data()?['status'] == RsvpStatus.going.name;
 
       tx.delete(attendeeRef);
       tx.delete(_userCalendar(uid).doc(eventId));
       if (wasGoing) {
         tx.update(
-            _events.doc(eventId), {'attendeeCount': FieldValue.increment(-1)});
+            _events.doc(eventId), <Object, Object?>{'attendeeCount': FieldValue.increment(-1)});
       }
     });
   }
@@ -496,14 +496,14 @@ class FirestoreService {
   Stream<List<Attendee>> streamAttendees(String eventId) =>
       _eventAttendees(eventId)
           .snapshots()
-          .map((snap) => snap.docs.map(Attendee.fromDoc).toList());
+          .map((QuerySnapshot<Map<String, dynamic>> snap) => snap.docs.map(Attendee.fromDoc).toList());
 
   /// This user's RSVP on one event, or null if they haven't responded.
   Stream<Attendee?> streamMyRsvp(String eventId, String uid) =>
       _eventAttendees(eventId)
           .doc(uid)
           .snapshots()
-          .map((doc) => doc.exists ? Attendee.fromDoc(doc) : null);
+          .map((DocumentSnapshot<Map<String, dynamic>> doc) => doc.exists ? Attendee.fromDoc(doc) : null);
 
   // ===========================================================================
   // CALENDAR
@@ -513,12 +513,12 @@ class FirestoreService {
   Stream<List<CalendarEntry>> streamCalendar(String uid) => _userCalendar(uid)
       .orderBy('startTime')
       .snapshots()
-      .map((snap) => snap.docs.map(CalendarEntry.fromDoc).toList());
+      .map((QuerySnapshot<Map<String, dynamic>> snap) => snap.docs.map(CalendarEntry.fromDoc).toList());
 
   /// Adds something the user made themselves (not tied to an event).
   Future<String> addPersonalCalendarEntry(
       String uid, CalendarEntry entry) async {
-    final ref = await _userCalendar(uid).add(entry.toMap());
+    final DocumentReference<Map<String, dynamic>> ref = await _userCalendar(uid).add(entry.toMap());
     return ref.id;
   }
 

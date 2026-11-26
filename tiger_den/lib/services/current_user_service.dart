@@ -61,7 +61,7 @@ class CurrentUserService extends ChangeNotifier {
   bool get isMissingProfile => uid != null && !_isLoading && _user == null;
 
   void _onSessionChanged() {
-    final uid = _session.currentUid;
+    final String? uid = _session.currentUid;
     if (uid == _loadedUid) return; // same user as before, nothing to reload
 
     // A different user (or nobody) is now logged in: stop the old listener.
@@ -80,7 +80,7 @@ class CurrentUserService extends ChangeNotifier {
     notifyListeners();
 
     _subscription = _db.streamUser(uid).listen(
-      (profile) {
+      (AppUser? profile) {
         _user = profile;
         _isLoading = false;
         notifyListeners();

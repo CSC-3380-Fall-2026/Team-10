@@ -22,14 +22,14 @@ import 'input_decoration.dart';
 ///   )
 class AppCheckbox extends StatelessWidget {
   const AppCheckbox({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.subtitle,
-    this.mustBeChecked = false,
-    this.errorText = 'This box must be checked',
-    this.enabled = true,
+    Key? super.key,
+    required String this.label,
+    required bool this.value,
+    required ValueChanged<bool> this.onChanged,
+    String? this.subtitle,
+    bool this.mustBeChecked = false,
+    String this.errorText = 'This box must be checked',
+    bool this.enabled = true,
   });
 
   /// Text next to the box.
@@ -54,16 +54,16 @@ class AppCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = context.style;
-    final textTheme = Theme.of(context).textTheme;
-    final errorColor = Theme.of(context).colorScheme.error;
+    final AppStyle style = context.style;
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final Color errorColor = Theme.of(context).colorScheme.error;
 
     return FormField<bool>(
       initialValue: value,
-      validator: (_) => mustBeChecked && !value ? errorText : null,
-      builder: (field) {
+      validator: (bool? _) => mustBeChecked && !value ? errorText : null,
+      builder: (FormFieldState<bool> field) {
         void toggle() {
-          final newValue = !value;
+          final bool newValue = !value;
           field.didChange(newValue); // clears the error once it's checked
           onChanged(newValue);
         }
@@ -71,7 +71,7 @@ class AppCheckbox extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <Widget>[
             InkWell(
               onTap: enabled ? toggle : null,
               borderRadius: BorderRadius.circular(style.radius),
@@ -81,10 +81,10 @@ class AppCheckbox extends StatelessWidget {
                   crossAxisAlignment: subtitle == null
                       ? CrossAxisAlignment.center
                       : CrossAxisAlignment.start,
-                  children: [
+                  children: <Widget>[
                     Checkbox(
                       value: value,
-                      onChanged: enabled ? (_) => toggle() : null,
+                      onChanged: enabled ? (bool? _) => toggle() : null,
                       activeColor: AppColors.purple,
                       checkColor: AppColors.white,
                       side: BorderSide(
@@ -108,7 +108,7 @@ class AppCheckbox extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
-                          children: [
+                          children: <Widget>[
                             Text(
                               label,
                               style: textTheme.bodyLarge?.copyWith(

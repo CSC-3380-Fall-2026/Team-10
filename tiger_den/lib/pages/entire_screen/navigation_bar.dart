@@ -31,8 +31,8 @@ class AppNavigationBar extends StatelessWidget {
 
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
-        pageBuilder: (context, animation, secondaryAnimation) => destination,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+        pageBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) => destination,
+        transitionsBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) =>
             FadeTransition(opacity: animation, child: child),
         transitionDuration: const Duration(milliseconds: 150),
       ),
@@ -46,8 +46,8 @@ class AppNavigationBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       selectedItemColor: Colors.purple,
       unselectedItemColor: Colors.grey,
-      onTap: (index) => _onItemTapped(context, index),
-      items: const [
+      onTap: (int index) => _onItemTapped(context, index),
+      items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
         BottomNavigationBarItem(
           icon: Icon(Icons.calendar_month),

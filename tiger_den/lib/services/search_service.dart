@@ -41,7 +41,7 @@ class SearchService {
       getSearchClient("write");
       SaveObjectResponse response = await client!.saveObject(
         indexName: 'project_SEARCH',
-        body: {
+        body: <String, Object>{
           'type': type,
           'objectID': id, 
           'title': title,
@@ -86,19 +86,19 @@ class SearchService {
     try {
       if (searchKey == null) {
         print("SearchKey null.");
-        return [];
+        return <SearchResult>[];
       }
       if (appIdKey == null) {
         print("appIdKey null.");
-        return [];
+        return <SearchResult>[];
       }
       getSearchClient("search");
-      List<String> conditions = [];
+      List<String> conditions = <String>[];
       if (type != null && type.trim().isNotEmpty) {
         conditions.add("type:'${type.trim()}'");
       }
       if (category != null && category.isNotEmpty) {
-        for (var cat in category) {
+        for (String cat in category) {
           if (cat.trim().isNotEmpty) {
             conditions.add("category:'${cat.trim()}'");
           }
@@ -107,7 +107,7 @@ class SearchService {
       }
 
       if (selectedTags != null && selectedTags.isNotEmpty) {
-        for (var tag in selectedTags) {
+        for (String tag in selectedTags) {
           if (tag.trim().isNotEmpty) {
             conditions.add("tags:'${tag.trim()}'");
           }
@@ -115,10 +115,10 @@ class SearchService {
       }
       List<List<String>>? filters;
       if (conditions.isNotEmpty) {
-        filters = conditions.map((String c) => [c]).toList();
+        filters = conditions.map((String c) => <String>[c]).toList();
       }
       SearchMethodParams searchParams = SearchMethodParams(
-        requests: [
+        requests: <dynamic>[
           SearchForHits(
             indexName: 'project_SEARCH',
             query: input,
@@ -135,7 +135,7 @@ class SearchService {
       var result = searchResponse.results.first;
       if (result.isNotEmpty) {
         var hits = result['hits'];
-        List<SearchResult> cleanedResults = [];
+        List<SearchResult> cleanedResults = <SearchResult>[];
         if (hits != null) {
           for (var hit in hits) {
             
@@ -146,8 +146,8 @@ class SearchService {
       }
     } catch (e) {
       print("Search Failed: $e");
-      return [];
+      return <SearchResult>[];
     }
-    return [];
+    return <SearchResult>[];
   }
 }

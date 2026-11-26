@@ -360,7 +360,7 @@ class CalendarState extends State<Calendar> {
     return ListView.builder(
       clipBehavior: Clip.hardEdge, 
       itemCount: lis.length,
-      itemBuilder: (context, index) {
+      itemBuilder: (BuildContext context, int index) {
         CalendarEntry event = lis[index];
         String? hex = event.color;
         Color col = AppColors.purple;
@@ -442,7 +442,7 @@ class CalendarState extends State<Calendar> {
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+          children: <Widget>[
            /* Expanded(
               flex: 4, 
               child: */Padding(

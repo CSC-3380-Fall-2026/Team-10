@@ -105,7 +105,7 @@ class SessionService extends ChangeNotifier {
   }
 
   static String _newSessionId() {
-    final random = Random.secure();
+    final Random random = Random.secure();
     return List.generate(16, (_) => random.nextInt(16).toRadixString(16))
         .join();
   }

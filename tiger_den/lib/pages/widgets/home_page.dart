@@ -42,13 +42,13 @@ class _HomePageState extends State<HomePage> {
   bool _isClubPlaying = true;
 
   // Placeholder hardcoded collections
-  final List<EventInfo> _events = [
+  final List<EventInfo> _events = <EventInfo>[
     EventInfo(imagePath: 'assets/event1.jpg', eventName: 'Mike Watch 2k26'),
     EventInfo(imagePath: 'assets/event2.jpg', eventName: 'Homecoming Tailgate Bash'),
     EventInfo(imagePath: 'assets/event3.jpg', eventName: 'Intramural Championship Match'),
   ];
 
-  final List<ClubInfo> _clubs = [
+  final List<ClubInfo> _clubs = <ClubInfo>[
     ClubInfo(imagePath: 'assets/club1.jpg', clubName: 'Tiger Photography Guild'),
     ClubInfo(imagePath: 'assets/club2.jpg', clubName: 'LSU Chess & Strategy Group'),
     ClubInfo(imagePath: 'assets/club3.jpg', clubName: 'Rec Outdoor Adventure Club'),
@@ -64,14 +64,14 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: Colors.purple,
         backgroundColor: Colors.grey,
         title: const Text('Tiger Den Home'),
-        actions: [
+        actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Search',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (context) => const SearchPage(),
+                  builder: (BuildContext context) => const SearchPage(),
                 ),
               );
             },
@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: <Widget>[
             const SizedBox(height: 12),
 
             // Event Slideshow
@@ -97,16 +97,16 @@ class _HomePageState extends State<HomePage> {
                   autoPlayInterval: const Duration(seconds: 4),
                   height: carouselHeight,
                 ),
-                items: _events.map((event) {
+                items: _events.map((EventInfo event) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(12.0),
                     child: Stack(
-                      children: [
+                      children: <Widget>[
                         SizedBox.expand(
                           child: Image.asset(
                             event.imagePath,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
+                            errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
                               color: Colors.purple.shade300,
                               child: const Center(
                                 child: Icon(Icons.event, color: Colors.white, size: 48),
@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [
+                                colors: <Color>[
                                   Colors.transparent,
                                   Colors.black.withAlpha(160),
                                 ],
@@ -136,7 +136,7 @@ class _HomePageState extends State<HomePage> {
                           right: 12.0,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
+                            children: <Widget>[
                               Expanded(
                                 child: Text(
                                   event.eventName,
@@ -182,7 +182,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
                 childAspectRatio: 2.8,
-                children: [
+                children: <Widget>[
                   _buildMenuButton(context, 'Categories', Icons.grid_view_rounded, Colors.purple),
                   _buildMenuButton(context, 'Locations', Icons.location_on, Colors.purple),
                   _buildMenuButton(context, 'Group Admin', Icons.admin_panel_settings, Colors.purple),
@@ -205,16 +205,16 @@ class _HomePageState extends State<HomePage> {
                     autoPlayInterval: const Duration(seconds: 5),
                     height: carouselHeight,
                   ),
-                  items: _clubs.map((club) {
+                  items: _clubs.map((ClubInfo club) {
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Stack(
-                        children: [
+                        children: <Widget>[
                           SizedBox.expand(
                           child: Image.asset(
                             club.imagePath,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
+                            errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
                               color: Colors.purple.shade300,
                               child: const Center(
                                 child: Icon(Icons.groups, color: Colors.white, size: 48),
@@ -228,7 +228,7 @@ class _HomePageState extends State<HomePage> {
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
-                                  colors: [
+                                  colors: <Color>[
                                     Colors.transparent,
                                     Colors.black.withAlpha(160),
                                   ],
@@ -242,7 +242,7 @@ class _HomePageState extends State<HomePage> {
                             right: 12.0,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
+                              children: <Widget>[
                                 Expanded(
                                   child: Text(
                                     club.clubName,

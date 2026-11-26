@@ -24,7 +24,7 @@ class EventLocation {
   });
 
   factory EventLocation.fromMap(dynamic raw) {
-    final m = dynamicMap(raw);
+    final Map<String, dynamic> m = dynamicMap(raw);
     return EventLocation(
       name: m['name'] ?? '',
       address: m['address'],
@@ -34,7 +34,7 @@ class EventLocation {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'name': name,
         'address': address,
         'geo': geo,
@@ -90,11 +90,11 @@ class Event {
     required this.location,
     this.description = '',
     this.category = '',
-    this.tags = const [],
+    this.tags = const <String>[],
     this.imageUrl,
     this.organizationId,
     this.organizationName,
-    this.hostIds = const [],
+    this.hostIds = const <String>[],
     this.allDay = false,
     this.timezone = 'America/Chicago',
     this.capacity,
@@ -107,7 +107,7 @@ class Event {
   });
 
   factory Event.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Event(
       id: doc.id,
       title: d['title'] ?? '',
@@ -135,7 +135,7 @@ class Event {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'title': title,
         'description': description,
         'category': category,
@@ -174,7 +174,7 @@ class Attendee {
   });
 
   factory Attendee.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Attendee(
       userId: doc.id,
       displayName: d['displayName'] ?? '',
@@ -183,7 +183,7 @@ class Attendee {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'displayName': displayName,
         'status': status.name,
       };

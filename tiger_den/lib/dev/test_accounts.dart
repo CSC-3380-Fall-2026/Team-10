@@ -18,7 +18,7 @@ class TestAccount {
   const TestAccount(this.label, this.email, this.password, this.username);
 }
 
-const List<TestAccount> testAccounts = [
+const List<TestAccount> testAccounts = <TestAccount>[
   TestAccount(
       'Test User 1', 'testuser1@tigerden.dev', 'TigerDenTest1!', 'test_user_1'),
   TestAccount(
