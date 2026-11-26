@@ -488,7 +488,7 @@ class CalendarState extends State<Calendar> {
             ),
             Container(
             //   // flex: 1,
-              height: 175,
+              height: 190,
               padding: EdgeInsets.only(
                 left: context.style.pageMargin,
                 right: context.style.pageMargin,

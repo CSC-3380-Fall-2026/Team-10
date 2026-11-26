@@ -57,7 +57,7 @@ class AppNavigationBar extends StatelessWidget {
           icon: Icon(Icons.person_rounded),
           label: 'Profile',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        // BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
     );
   }
