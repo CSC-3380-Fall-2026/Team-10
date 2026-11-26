@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../base_designs/sitewide/design_main.dart';
 import '../../models/app_user.dart';
@@ -12,6 +12,7 @@ import '../entire_screen/navigation_bar.dart';
 import '../entire_screen/search_page.dart';
 import 'club_Editing.dart';
 import 'event_editing.dart';
+import 'login_page.dart';
 
 /// Profile Page for Tiger Den, based off wireframes.
 ///
@@ -64,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return null;
     }
   }
-
+  /// Fetches the firestore service
   FirestoreService? _getFirestoreService() {
     if (widget.firestoreService != null) return widget.firestoreService;
     try {
@@ -121,7 +122,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // Sign-out prompt
-
   Future<void> _handleSignOut() async {
     final bool? shouldSignOut = await _confirm(
       'Are you sure you want to sign out?',
@@ -309,11 +309,13 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final Widget body;
+    final AppUser? widgeInitialU = widget.initialUser;
     if (_signedOut) {
-      body = _buildMessage('You are signed out.');
-    } else if (widget.initialUser != null) {
-      body = _buildProfile(widget.initialUser!);
+      body = _buildMessageOut('You are signed out.');
+    } else if (widgeInitialU != null) {
+      body = _buildProfile(widgeInitialU);
     } else if (_userStream != null) {
+      
       body = StreamBuilder<AppUser?>(
         stream: _userStream,
         builder: (BuildContext context, AsyncSnapshot<AppUser?> snapshot) {
@@ -322,7 +324,7 @@ class _ProfilePageState extends State<ProfilePage> {
           }
           final AppUser? user = snapshot.data;
           return user == null
-              ? _buildMessage('This profile could not be found.')
+              ? _buildMessageOut('This profile could not be found.')
               : _buildProfile(user);
         },
       );
@@ -336,13 +338,14 @@ class _ProfilePageState extends State<ProfilePage> {
           }
           final AppUser? user = me.user;
           if (user != null) return _buildProfile(user);
-          return _buildMessage(me.uid == null
+          final String? meUid = me.uid;
+          return _buildMessageOut(meUid == null
               ? 'Log in to see your profile.'
               : 'Your profile could not be found.');
         },
       );
     } else {
-      body = _buildMessage('Log in to see your profile.');
+      body = _buildMessageOut('Log in to see your profile.');
     }
 
     return Scaffold(
@@ -369,17 +372,96 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildMessage(String text) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16.0, color: Colors.grey.shade700),
+  ///builds message for error and has a button that signs user out if applicable and then takes them to the login screen
+  Widget _buildMessageOut(String text) {
+    return Column(
+      children: [
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16.0, color: Colors.grey.shade700),
+            ),
+          ),
         ),
-      ),
+        _buildOutButton(),
+      ]
     );
+  }
+  /// Button for if profile fails to load;
+  Widget _buildOutButton(){
+    return Column(
+      children: [
+        Center(
+          child: Text(
+            "If you see the above message and do not expect it, try clicking this button and logging in again.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16.0, color: Colors.grey.shade700)
+            )
+          ),
+        SizedBox(height: context.style.spaceMedium),
+        SizedBox(
+          width: double.infinity,
+          height: 48.0,
+          child: ElevatedButton(
+            onPressed: _handleOut,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purple,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+            ),
+            child: Text(
+              'Back to Login',
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        )
+      ]
+    );
+  }
+  /// Handles signing out if there is an error when loading the profile
+  Future<void>_handleOut() async{
+    bool success = true;
+      try {
+        final AuthService? auth = _getAuthService();
+        if (auth != null) {
+          await auth.logOut();
+        }
+      } catch (e) {
+        debugPrint('Sign out notice: $e');
+        _showMessage('Sign out unsuccessful. Try Logging in again if possible anyway.');
+        success = false;
+      }
+
+      if (mounted) {
+        setState(() {
+          _signedOut = true;
+        });
+        if(success){
+          _showMessage('Signed out successfully.');
+        }
+        widget.onSignOut?.call();
+      }
+    
+    if (mounted){
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder<void>(
+          pageBuilder: (context, animation, secondaryAnimation) => const LoginPage(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 150),
+        ),
+      );
+    }
   }
 
   Widget _buildProfile(AppUser user) {
@@ -507,37 +589,38 @@ class _ProfilePageState extends State<ProfilePage> {
 
           const SizedBox(height: 32.0),
 
-          // Sign Out Button (Slide 6)
-          SizedBox(
-            width: double.infinity,
-            height: 48.0,
-            child: ElevatedButton(
-              onPressed: _handleSignOut,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple,
-                foregroundColor: Colors.white,
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-              ),
-              child: const Text(
-                'Sign Out',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
+          _buildSignOutButton(),
 
           const SizedBox(height: 16.0),
         ],
       ),
     );
   }
-
+  Widget _buildSignOutButton(){
+    return SizedBox(
+      width: double.infinity,
+      height: 48.0,
+      child: ElevatedButton(
+        onPressed: _handleSignOut,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12.0),
+          ),
+        ),
+        child: const Text(
+          'Sign Out',
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
   Widget _buildAvatar(String? photoUrl, String displayName) {
     return Container(
       width: 68.0,
