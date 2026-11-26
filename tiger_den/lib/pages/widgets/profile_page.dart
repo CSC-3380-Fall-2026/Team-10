@@ -65,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return null;
     }
   }
-
+  /// Fetches the firestore service
   FirestoreService? _getFirestoreService() {
     if (widget.firestoreService != null) return widget.firestoreService;
     try {
