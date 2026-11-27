@@ -43,10 +43,12 @@ class EventCreationFormState extends State<EventCreationForm> {
   TextEditingController titleController = TextEditingController();
   ///The controller for the event description field
   TextEditingController descriptionController = TextEditingController();
-  ///The controller for the event address field
-  TextEditingController addressController = TextEditingController();
+  ///The controller for the event location field
+  TextEditingController locationController = TextEditingController();
   ///The controller for the event capacity field
   TextEditingController capacityController = TextEditingController();
+  ///The controller for the event minCapacity field
+  TextEditingController minCapController = TextEditingController();
   ///The controller for the virtual meeting link field
   TextEditingController meetingLinkController = TextEditingController();
   ///The controller for the event tags dropdown
@@ -60,6 +62,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   String category = "casual";
   ///Id for search index of event uploaded
   String searchIndexId = "";
+  ///Prevents spam clicking
+  bool submitClicked = false;
 
   ///The selected starting date for the event
   DateTime? selectedStartDate;
@@ -243,11 +247,12 @@ class EventCreationFormState extends State<EventCreationForm> {
         endTime: endDateTime,
         allDay: allDayChecked,
         location: EventLocation(
-          name: addressController.text.trim(),
+          name: locationController.text.trim(),
           isVirtual: virtualChecked,
           meetingUrl: virtualChecked ? meetingLinkController.text.trim() : null,
         ),
         capacity: int.tryParse(capacityController.text.trim()),
+        minCapacity: int.tryParse(minCapController.text.trim()),
         tags: selectedTags,
         imageUrl: selectedImageUrl,
         visibility: EventVisibility.public,
@@ -285,8 +290,9 @@ class EventCreationFormState extends State<EventCreationForm> {
   void dispose() { 
     titleController.dispose();
     descriptionController.dispose();
-    addressController.dispose();
+    locationController.dispose();
     capacityController.dispose();
+    minCapController.dispose();
     meetingLinkController.dispose();
     multiSelectController.dispose();
     imageService.cleanUp();
@@ -340,13 +346,13 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  ///Builds the text field for the event address
-  Widget buildAddressField() {
+  ///Builds the text field for the event location
+  Widget buildLocationField() {
     return TextFormField(
-      controller: addressController,
+      controller: locationController,
       keyboardType: TextInputType.streetAddress,
       decoration: InputDecoration(
-        labelText: 'Event Address',
+        labelText: 'Event Location',
         border: OutlineInputBorder(),
       ),
       validator: (String? value) {
@@ -363,7 +369,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     return FormField<DateTime>(
       validator: (DateTime? value) {
         if (selectedStartDate == null) {
-          return 'You must fill this out.';
+          return 'You must fill the start date out.';
         }
         return null;
       },
@@ -400,7 +406,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     return FormField<DateTime>(
       validator: (DateTime? value) {
         if (selectedEndDate == null) {
-          return 'You must fill this out.';
+          return 'You must fill the end date out.';
         }
         return null;
       },
@@ -429,6 +435,22 @@ class EventCreationFormState extends State<EventCreationForm> {
           child: Text(buttonText),
         );
       },
+    );
+  }
+
+
+  ///Builds the row containing both min and max capacity 
+  Widget buildCapacityRow() {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          /// true is min
+          child: buildCapacityField(true),
+        ),
+        Expanded(
+          child: buildCapacityField(false),
+        ),
+      ],
     );
   }
 
@@ -465,7 +487,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     return FormField<TimeOfDay>(
       validator: (TimeOfDay? value) {
         if (!allDayChecked && selectedStartTime == null) {
-          return 'You must fill this out.';
+          return 'You must fill the start time out.';
         }
         return null;
       },
@@ -501,7 +523,7 @@ class EventCreationFormState extends State<EventCreationForm> {
     return FormField<TimeOfDay>(
       validator: (TimeOfDay? value) {
         if (!allDayChecked && selectedEndTime == null) {
-          return 'You must fill this out.';
+          return 'You must fill the end time out.';
         }
         return null;
       },
@@ -549,19 +571,25 @@ class EventCreationFormState extends State<EventCreationForm> {
   }
 
   ///Builds the text field for maximum attendee capacity
-  Widget buildCapacityField() {
+  Widget buildCapacityField(bool isMin) {
+    TextEditingController control = capacityController;
+    String label = 'Max Capacity';
+    if(isMin){
+      control = minCapController;
+      label = 'Min Capacity';
+    }
     return TextFormField(
-      controller: capacityController,
+      controller: control,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
-        labelText: 'Max Capacity',
+        labelText: label,
         border: OutlineInputBorder(),
       ),
       validator: (String? value) {
         if (value == null || value.isEmpty) {
-          return 'You must fill this section out';
+          return null;
         }
-        if (int.tryParse(value) == null) {
+        if (int.tryParse(value.trim()) == null) {
           return 'Please enter a valid number';
         }
         return null;
@@ -590,7 +618,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           Expanded(
             child: TextFormField(
               controller: meetingLinkController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Meeting Link',
                 border: OutlineInputBorder(),
               ),
@@ -694,26 +722,74 @@ class EventCreationFormState extends State<EventCreationForm> {
             buildTitleField(),
             buildImageGetter(),
             buildDescriptionField(),
-            buildAddressField(),
+            buildLocationField(),
             buildDateRow(),
             buildAllDayCheckbox(),
             buildTimeRow(),
-            buildCapacityField(),
+            buildCapacityRow(),
             buildVirtualRow(),
             buildEventTypeDropdown(),
             buildClubDropdown(),
             buildTagsDropdown(),
             ElevatedButton(
               onPressed: () async {
-                if (eventFormKey.currentState!.validate()) {
-                  selectedImageUrl = await imageService.uploadImageToImgbb(selectedImage);
-                  if (selectedImageUrl == null){
-                    print("ImageURL is null");
+                if(!submitClicked){
+                  Set<FormFieldState<Object?>> validations = eventFormKey.currentState!.validateGranularly();
+                    if (validations != null && validations.isNotEmpty) {
+                      String err = validations.first.errorText ?? "Form validation failed for unknown reason.";
+                      if(mounted){
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Form Validation Failed: $err")),
+                        );
+                      }
+                      return;
+                    }
+                  try {
+                    ///put loading thing here?
+                    submitClicked = true;
+                    if(mounted){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Uploading...')),
+                      );
+                    }
+                    if (selectedImage != null) {
+                      debugPrint("Awaiting Image Upload");
+                      selectedImageUrl = await imageService.uploadImageToImgbb(selectedImage!);
+                      debugPrint("Image Uploaded");
+                      if (selectedImageUrl == null) {
+                        if(mounted){
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('ImageURL is null.')),
+                          );
+                        }
+                      }
+                    }
+                    debugPrint("Awaiting Upload");
+                    await submitForm();
+                    submitClicked = false;
+                    if(mounted){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Event Uploaded Successfully.')),
+                      );
+                    }        
+                    debugPrint("Event Tried Uploading");
+                  } catch (e) {
+                    submitClicked = false;
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to Upload Form: $e')),
+                      );
+                    }
                   }
-                  submitForm();
+                } else {
+                  if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Still uploading form. Image Uploading Takes a Long Time.")),
+                      );
+                    }
                 }
               },
-              child: const Text('Submit'),
+              child: Text('Submit'),
             ),
           ],
         ),
@@ -721,3 +797,6 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 }
+
+
+///Things to add: way to go back maybe?? like cancel? idk

@@ -25,13 +25,30 @@ class SearchService {
         print("Write api key null");
         return null;
       }
-      client = SearchClient(appId: appIdKey!, apiKey: writeKey!);
+      client = SearchClient(
+        appId: appIdKey!,
+        apiKey: writeKey!,
+        options: ClientOptions(
+          connectTimeout: Duration(seconds: 15),
+          writeTimeout: Duration(seconds: 25),
+          readTimeout: Duration(seconds: 15),
+        ),
+      );
     } else {
       if (clientType =="search" && searchKey == null){
         print("Search api key null");
         return null;
         }
-        client = SearchClient(appId: appIdKey!, apiKey: searchKey!);}
+        client = SearchClient(
+          appId: appIdKey!, 
+          apiKey: searchKey!,
+          options: ClientOptions(
+          connectTimeout: Duration(seconds: 15),
+          writeTimeout: Duration(seconds: 25),
+          readTimeout: Duration(seconds: 15),
+        ),
+        );
+      }
     return client; 
   }
   ///Creates and index for searching. Neccessary for every time an event or club is added. type refers to event vs club, category is official vs unofficial 
