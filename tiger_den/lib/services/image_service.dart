@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tiger_den/models/event.dart';
 import 'package:tiger_den/models/organization.dart';
 import 'firestore_service.dart';
@@ -48,9 +49,11 @@ class ImageService {
   }
     ///Disposes temporary image folder and all its contents
   Future<void> destroyImageFolder() async {
+    try {
       if (await imageDir.exists()) {
       await imageDir.delete(recursive: true);
     }
+    }on Object catch (e){debugPrint("error: $e");} 
   }
 
   ///Uploads the selected file to Imgbb and returns its URL string.

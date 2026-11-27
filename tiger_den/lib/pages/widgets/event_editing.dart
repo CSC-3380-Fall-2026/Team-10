@@ -56,9 +56,10 @@ class EventEditFormState extends State<EventEditForm> {
 
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
-  TextEditingController addressController = TextEditingController();
+  TextEditingController locationController = TextEditingController();
   TextEditingController capacityController = TextEditingController();
   TextEditingController meetingLinkController = TextEditingController();
+  TextEditingController minCapController = TextEditingController();
   MultiSelectController<String> multiSelectController =
       MultiSelectController<String>();
 
@@ -131,7 +132,7 @@ class EventEditFormState extends State<EventEditForm> {
   void fillForm(Event e) {
     titleController.text = e.title;
     descriptionController.text = e.description;
-    addressController.text = e.location.name;
+    locationController.text = e.location.name;
     capacityController.text = e.capacity?.toString() ?? '';
     virtualChecked = e.location.isVirtual;
     meetingLinkController.text = e.location.meetingUrl ?? '';
@@ -241,7 +242,7 @@ class EventEditFormState extends State<EventEditForm> {
         'endTime': Timestamp.fromDate(endDateTime),
         'allDay': allDayChecked,
         'location': EventLocation(
-          name: addressController.text.trim(),
+          name: locationController.text.trim(),
           address: event!.location.address,
           geo: event!.location.geo,
           isVirtual: virtualChecked,
@@ -295,12 +296,13 @@ class EventEditFormState extends State<EventEditForm> {
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-    addressController.dispose();
+    locationController.dispose();
     capacityController.dispose();
     meetingLinkController.dispose();
     multiSelectController.dispose();
+    minCapController.dispose();
     // cleanUp throws if nothing was compressed, so ignore that error
-    imageService.cleanUp().catchError((_) {});
+    imageService.cleanUp().catchError((dynamic _) {});
     super.dispose();
   }
 
@@ -375,11 +377,11 @@ class EventEditFormState extends State<EventEditForm> {
     );
   }
 
-  Widget buildAddressField() {
+  Widget buildLocationField() {
     return TextFormField(
-      controller: addressController,
+      controller: locationController,
       decoration: const InputDecoration(
-        labelText: 'Event Address',
+        labelText: 'Event Location',
         border: OutlineInputBorder(),
       ),
       validator: requiredText,
@@ -428,19 +430,86 @@ class EventEditFormState extends State<EventEditForm> {
     );
   }
 
+///Builds the checkbox specifying whether the event is an all-day event
   Widget buildAllDayCheckbox() {
-    return Row(
-      children: <Widget>[
-        Checkbox(
-          checkColor: Colors.white,
-          fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
-          value: allDayChecked,
-          onChanged: (bool? value) =>
-              setState(() => allDayChecked = value ?? false),
-        ),
-        const Text('All-day event'),
-      ],
+    return Expanded (
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Checkbox(
+              checkColor: Colors.white,
+              fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
+              value: allDayChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  allDayChecked = value!;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: Text(
+              "All Day?",
+              // style: context.,
+            )
+          ),
+        ]
+      )
     );
+  }
+
+
+  Widget buildVirtualCheckbox(){
+    return Expanded(
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Checkbox(
+              checkColor: Colors.white,
+              fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
+              value: virtualChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  virtualChecked = value!;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: Text(
+              "Virtual?",
+              // style: context.,
+            )
+          ),
+        ]
+      )
+    );
+  }
+   ///Builds the virtual event checkbox, the conditional meeting link input field, and the all day checkbox
+  Widget buildCheckboxRow() {
+    return Row(
+        children: <Widget>[
+          buildVirtualCheckbox(),
+          Expanded(
+            child: Visibility(
+              visible: virtualChecked,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: TextFormField(
+                controller: meetingLinkController,
+                decoration: InputDecoration(
+                  labelText: 'Link - Meeting',
+                  border: OutlineInputBorder(),
+                ),
+                validator: requiredText,
+              )
+            ),
+          ),
+          buildAllDayCheckbox(),
+        ],
+      );
+
   }
 
   Widget buildTimePicker({required bool isStart}) {
@@ -486,50 +555,30 @@ class EventEditFormState extends State<EventEditForm> {
     );
   }
 
-  Widget buildCapacityField() {
+  ///Builds the text field for maximum attendee capacity
+  Widget buildCapacityField(bool isMin) {
+    TextEditingController control = capacityController;
+    String label = 'Maxiumum Attendance';
+    if(isMin){
+      control = minCapController;
+      label = 'Minimum Attendance';
+    }
     return TextFormField(
-      controller: capacityController,
+      controller: control,
       keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
-        labelText: 'Max Capacity',
+      decoration: InputDecoration(
+        labelText: label,
         border: OutlineInputBorder(),
       ),
       validator: (String? value) {
         if (value == null || value.isEmpty) {
-          return 'You must fill this section out';
+          return null;
         }
-        if (int.tryParse(value) == null) {
+        if (int.tryParse(value.trim()) == null) {
           return 'Please enter a valid number';
         }
         return null;
       },
-    );
-  }
-
-  Widget buildVirtualRow() {
-    return Row(
-      children: <Widget>[
-        Checkbox(
-          checkColor: Colors.white,
-          fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
-          value: virtualChecked,
-          onChanged: (bool? value) =>
-              setState(() => virtualChecked = value ?? false),
-        ),
-        const Text('Virtual'),
-        const SizedBox(width: 8),
-        if (virtualChecked)
-          Expanded(
-            child: TextFormField(
-              controller: meetingLinkController,
-              decoration: const InputDecoration(
-                labelText: 'Meeting Link',
-                border: OutlineInputBorder(),
-              ),
-              validator: requiredText,
-            ),
-          ),
-      ],
     );
   }
 
@@ -605,7 +654,20 @@ class EventEditFormState extends State<EventEditForm> {
       },
     );
   }
-
+  ///Builds the row containing both min and max capacity 
+  Widget buildCapacityRow() {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          /// true is min
+          child: buildCapacityField(true),
+        ),
+        Expanded(
+          child: buildCapacityField(false),
+        ),
+      ],
+    );
+  }
   Widget buildSaveButton() {
     return ElevatedButton(
       onPressed: isSaving ? null : () async => submitForm(),
@@ -632,19 +694,19 @@ class EventEditFormState extends State<EventEditForm> {
       child: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            buildTitleField(),
             buildImageGetter(),
+            buildTitleField(),
             buildDescriptionField(),
-            buildAddressField(),
+            buildLocationField(),
+            buildCheckboxRow(), //oo i see an issue
             buildDateRow(),
-            buildAllDayCheckbox(),
             buildTimeRow(),
-            buildCapacityField(),
-            buildVirtualRow(),
+            buildCapacityRow(),
             buildEventTypeDropdown(),
             buildClubDropdown(),
             buildTagsDropdown(),
-            buildSaveButton(),
+            buildSaveButton(), //add protections
+            
           ],
         ),
       ),
