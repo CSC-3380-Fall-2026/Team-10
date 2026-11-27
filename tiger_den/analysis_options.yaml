@@ -5,3 +5,9 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+
+linter:
+  rules:
+    always_specify_types: true
+    always_declare_return_types: true
+    type_init_formals: false

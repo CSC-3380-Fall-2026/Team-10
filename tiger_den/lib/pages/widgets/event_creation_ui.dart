@@ -27,7 +27,7 @@ class EventCreationForm extends StatefulWidget {
 ///Stores the state and form data for EventCreationForm
 class EventCreationFormState extends State<EventCreationForm> {
   ///The key used to validate this form
-  final eventFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> eventFormKey = GlobalKey<FormState>();
   ///The service used for image compression and modification
   ImageService imageService = ImageService();
   ///The service used to communicate with Cloud Firestore
@@ -43,10 +43,12 @@ class EventCreationFormState extends State<EventCreationForm> {
   TextEditingController titleController = TextEditingController();
   ///The controller for the event description field
   TextEditingController descriptionController = TextEditingController();
-  ///The controller for the event address field
-  TextEditingController addressController = TextEditingController();
+  ///The controller for the event location field
+  TextEditingController locationController = TextEditingController();
   ///The controller for the event capacity field
   TextEditingController capacityController = TextEditingController();
+  ///The controller for the event minCapacity field
+  TextEditingController minCapController = TextEditingController();
   ///The controller for the virtual meeting link field
   TextEditingController meetingLinkController = TextEditingController();
   ///The controller for the event tags dropdown
@@ -60,6 +62,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   String category = "casual";
   ///Id for search index of event uploaded
   String searchIndexId = "";
+  ///Prevents spam clicking
+  bool submitClicked = false;
 
   ///The selected starting date for the event
   DateTime? selectedStartDate;
@@ -75,11 +79,11 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///The selected event category
   String? selectedCategory;
   ///The organizations managed by the current user
-  List<String> orgList = []; 
+  List<String> orgList = <String>[]; 
   ///The current user's organization memberships
-  List<Membership> userMemberships = [];
+  List<Membership> userMemberships = <Membership>[];
   ///The tags selected for this event
-  List<String> selectedTags = [];
+  List<String> selectedTags = <String>[];
   
   ///The image selected for the event
   XFile? selectedImage;
@@ -120,7 +124,7 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Returns whether the current user is an officer or owner of an organization
   bool isAdmin(){
-    for (final m in userMemberships) {
+    for (final Membership m in userMemberships) {
       if (m.role == OrgRole.owner || m.role == OrgRole.admin) {
         return true;
       }
@@ -130,8 +134,8 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Retrieves the list of organizations the current user manages
   List<String> retrieveAdminClubs(){
-    List<String> adminClubs = [];
-    for (final m in userMemberships) {
+    List<String> adminClubs = <String>[];
+    for (final Membership m in userMemberships) {
       if (m.role == OrgRole.owner || m.role == OrgRole.admin) {
         adminClubs.add(m.orgName);
       }
@@ -155,8 +159,8 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Loads the initial user profile and organization memberships from the database
   Future<void> loadInitialData() async {
     try {
-      final user = await firestoreService.getUser(widget.currentUserId);
-      final membershipsSnap = await firestoreService.streamMyMemberships(widget.currentUserId).first;
+      final AppUser? user = await firestoreService.getUser(widget.currentUserId);
+      final List<Membership> membershipsSnap = await firestoreService.streamMyMemberships(widget.currentUserId).first;
       if (mounted) {
         setState(() {
           currentUser = user;
@@ -200,11 +204,11 @@ class EventCreationFormState extends State<EventCreationForm> {
     }
 
     try {
-      final startDate = selectedStartDate ?? DateTime.now();
-      final endDate = selectedEndDate ?? startDate;
+      final DateTime startDate = selectedStartDate ?? DateTime.now();
+      final DateTime endDate = selectedEndDate ?? startDate;
       
-      final startTime = selectedStartTime;
-      final startDateTime = DateTime(
+      final TimeOfDay? startTime = selectedStartTime;
+      final DateTime startDateTime = DateTime(
         startDate.year,
         startDate.month,
         startDate.day,
@@ -212,8 +216,8 @@ class EventCreationFormState extends State<EventCreationForm> {
         allDayChecked ? 0 : (startTime != null ? startTime.minute : 0),
       );
 
-      final endTime = selectedEndTime;
-      final endDateTime = DateTime(
+      final TimeOfDay? endTime = selectedEndTime;
+      final DateTime endDateTime = DateTime(
         endDate.year,
         endDate.month,
         endDate.day,
@@ -223,8 +227,8 @@ class EventCreationFormState extends State<EventCreationForm> {
 
       String? targetOrgId;
       if (category == "official" && selectedClub != null) {
-          var match = userMemberships.first; 
-          for (final m in userMemberships) {
+          Membership match = userMemberships.first; 
+          for (final Membership m in userMemberships) {
             if (m.orgName == selectedClub) {
               match = m;
               break;
@@ -232,7 +236,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           }
           targetOrgId = match.orgId;
         }
-      final newEvent = Event(
+      final Event newEvent = Event(
         id: '', 
         organizationId: targetOrgId,
         createdBy: currentUser!.id,
@@ -243,11 +247,12 @@ class EventCreationFormState extends State<EventCreationForm> {
         endTime: endDateTime,
         allDay: allDayChecked,
         location: EventLocation(
-          name: addressController.text.trim(),
+          name: locationController.text.trim(),
           isVirtual: virtualChecked,
           meetingUrl: virtualChecked ? meetingLinkController.text.trim() : null,
         ),
         capacity: int.tryParse(capacityController.text.trim()),
+        minCapacity: int.tryParse(minCapController.text.trim()),
         tags: selectedTags,
         imageUrl: selectedImageUrl,
         visibility: EventVisibility.public,
@@ -285,8 +290,9 @@ class EventCreationFormState extends State<EventCreationForm> {
   void dispose() { 
     titleController.dispose();
     descriptionController.dispose();
-    addressController.dispose();
+    locationController.dispose();
     capacityController.dispose();
+    minCapController.dispose();
     meetingLinkController.dispose();
     multiSelectController.dispose();
     imageService.cleanUp();
@@ -301,7 +307,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         labelText: 'Event Title',
         border: UnderlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -331,7 +337,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         labelText: 'Event Description',
         border: UnderlineInputBorder(),  
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
           return 'You must fill this section out';
         }
@@ -340,17 +346,17 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  ///Builds the text field for the event address
-  Widget buildAddressField() {
+  ///Builds the text field for the event location
+  Widget buildLocationField() {
     return TextFormField(
-      controller: addressController,
+      controller: locationController,
       keyboardType: TextInputType.streetAddress,
       decoration: InputDecoration(
-        labelText: 'Event Address',
+        labelText: 'Event Location',
         border: OutlineInputBorder(),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
+      validator: (String? value) {
+        if ((value == null || value.isEmpty) && !virtualChecked) {
           return 'You must fill this section out';
         }
         return null;
@@ -361,13 +367,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the start date picker field
   Widget buildStartDatePicker() {
     return FormField<DateTime>(
-      validator: (value) {
+      validator: (DateTime? value) {
         if (selectedStartDate == null) {
-          return 'You must fill this out.';
+          return 'You must fill the start date out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<DateTime> state) {
         String buttonText;
         if (selectedStartDate == null) {
           buttonText = 'Start Date';
@@ -376,7 +382,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         }
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showDatePicker(
+            final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: selectedStartDate ?? DateTime.now(),
               firstDate: DateTime(2000),
@@ -398,13 +404,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the end date picker field
   Widget buildEndDatePicker() {
     return FormField<DateTime>(
-      validator: (value) {
+      validator: (DateTime? value) {
         if (selectedEndDate == null) {
-          return 'You must fill this out.';
+          return 'You must fill the end date out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<DateTime> state) {
         String buttonText;
         if (selectedEndDate == null) {
           buttonText = 'End Date';
@@ -413,7 +419,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         }
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showDatePicker(
+            final DateTime? picked = await showDatePicker(
               context: context,
               initialDate: selectedEndDate ?? DateTime.now(),
               firstDate: DateTime(2000),
@@ -432,10 +438,26 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
+
+  ///Builds the row containing both min and max capacity 
+  Widget buildCapacityRow() {
+    return Row(
+      children: <Widget>[
+        Expanded(
+          /// true is min
+          child: buildCapacityField(true),
+        ),
+        Expanded(
+          child: buildCapacityField(false),
+        ),
+      ],
+    );
+  }
+
   ///Builds the row containing both start and end date pickers
   Widget buildDateRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(
           child: buildStartDatePicker(),
         ),
@@ -448,28 +470,42 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Builds the checkbox specifying whether the event is an all-day event
   Widget buildAllDayCheckbox() {
-    return Checkbox(
-      checkColor: Colors.white,
-      fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
-      value: allDayChecked,
-      onChanged: (bool? value) {
-        setState(() {
-          allDayChecked = value!;
-        });
-      },
+    return Expanded (
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Checkbox(
+              checkColor: Colors.white,
+              fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
+              value: allDayChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  allDayChecked = value!;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: Text(
+              "All Day?",
+              // style: context.,
+            )
+          ),
+        ]
+      )
     );
   }
 
   ///Builds the start time picker field
   Widget buildStartTimePicker() {
     return FormField<TimeOfDay>(
-      validator: (value) {
+      validator: (TimeOfDay? value) {
         if (!allDayChecked && selectedStartTime == null) {
-          return 'You must fill this out.';
+          return 'You must fill the start time out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<TimeOfDay> state) {
         String buttonText;
         if (selectedStartTime == null) {
           buttonText = 'Start Time';
@@ -479,7 +515,7 @@ class EventCreationFormState extends State<EventCreationForm> {
 
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showTimePicker(
+            final TimeOfDay? picked = await showTimePicker(
               context: context,
               initialTime: selectedStartTime ?? TimeOfDay.now(),
             );
@@ -499,13 +535,13 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the end time picker field
   Widget buildEndTimePicker() {
     return FormField<TimeOfDay>(
-      validator: (value) {
+      validator: (TimeOfDay? value) {
         if (!allDayChecked && selectedEndTime == null) {
-          return 'You must fill this out.';
+          return 'You must fill the end time out.';
         }
         return null;
       },
-      builder: (state) {
+      builder: (FormFieldState<TimeOfDay> state) {
         String buttonText;
         if (selectedEndTime == null) {
           buttonText = 'End Time';
@@ -514,7 +550,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         }
         return ElevatedButton(
           onPressed: () async {
-            final picked = await showTimePicker(
+            final TimeOfDay? picked = await showTimePicker(
               context: context,
               initialTime: selectedEndTime ?? TimeOfDay.now(),
             );
@@ -537,7 +573,7 @@ class EventCreationFormState extends State<EventCreationForm> {
       return SizedBox.shrink();
     }
     return Row(
-      children: [
+      children: <Widget>[
         Expanded(
           child: buildStartTimePicker(),
         ),
@@ -549,19 +585,25 @@ class EventCreationFormState extends State<EventCreationForm> {
   }
 
   ///Builds the text field for maximum attendee capacity
-  Widget buildCapacityField() {
+  Widget buildCapacityField(bool isMin) {
+    TextEditingController control = capacityController;
+    String label = 'Maxiumum Attendance';
+    if(isMin){
+      control = minCapController;
+      label = 'Minimum Attendance';
+    }
     return TextFormField(
-      controller: capacityController,
+      controller: control,
       keyboardType: TextInputType.number,
       decoration: InputDecoration(
-        labelText: 'Max Capacity',
+        labelText: label,
         border: OutlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.isEmpty) {
-          return 'You must fill this section out';
+          return null;
         }
-        if (int.tryParse(value) == null) {
+        if (int.tryParse(value.trim()) == null) {
           return 'Please enter a valid number';
         }
         return null;
@@ -569,41 +611,63 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  ///Builds the virtual event checkbox and the conditional meeting link input field
-  Widget buildVirtualRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: Checkbox(
-            checkColor: Colors.white,
-            fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
-            value: virtualChecked,
-            onChanged: (bool? value) {
-              setState(() {
-                virtualChecked = value!;
-              });
-            },
-          ),
-        ),
-        
-        if (virtualChecked)
+  Widget buildVirtualCheckbox(){
+    return Expanded(
+      child: Row(
+        children: <Widget>[
           Expanded(
-            child: TextFormField(
-              controller: meetingLinkController,
-              decoration: const InputDecoration(
-                labelText: 'Meeting Link',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if ((value == null || value.isEmpty)) {
-                  return 'You must fill this section out';
-                }
-                return null;
+            child: Checkbox(
+              checkColor: Colors.white,
+              fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
+              value: virtualChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  virtualChecked = value!;
+                });
               },
             ),
           ),
-      ],
+          Expanded(
+            child: Text(
+              "Virtual?",
+              // style: context.,
+            )
+          ),
+        ]
+      )
     );
+  }
+
+  ///Builds the virtual event checkbox, the conditional meeting link input field, and the all day checkbox
+  Widget buildCheckboxRow() {
+    return Row(
+        children: <Widget>[
+          buildVirtualCheckbox(),
+          Expanded(
+            child: Visibility(
+              visible: virtualChecked,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: TextFormField(
+                controller: meetingLinkController,
+                decoration: InputDecoration(
+                  labelText: 'Link - Meeting',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (String? value) {
+                  if ((value == null || value.isEmpty)) {
+                    return 'You must fill this section out';
+                  }
+                  return null;
+                },
+              )
+            ),
+          ),
+          buildAllDayCheckbox(),
+        ],
+      );
+
   }
 
   ///Builds the dropdown to toggle between official organization events and other events
@@ -627,7 +691,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           });
         }
       },
-      dropdownMenuEntries: [
+      dropdownMenuEntries: <DropdownMenuEntry<String>>[
         DropdownMenuEntry<String>(
           value: 'official',
           label: 'Event for Official Organization or Club',
@@ -656,7 +720,7 @@ class EventCreationFormState extends State<EventCreationForm> {
           });
         }
       }, 
-      dropdownMenuEntries: orgList.map((value) {
+      dropdownMenuEntries: orgList.map((String value) {
         return DropdownMenuEntry<String>(
           value: value.toString(),
           label: value.toString(),
@@ -672,7 +736,7 @@ class EventCreationFormState extends State<EventCreationForm> {
       fieldDecoration: FieldDecoration(
         hintText: 'Select Tags',
       ),
-      items: tagService.fetchTags().map((item) => DropdownItem(
+      items: tagService.fetchTags().map((String item) => DropdownItem(
         label: item, 
         value: item,)).toList(),
       onSelectionChange: (List<String> selectedItems) {
@@ -691,29 +755,76 @@ class EventCreationFormState extends State<EventCreationForm> {
       child: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            buildTitleField(),
             buildImageGetter(),
+            buildTitleField(),
             buildDescriptionField(),
-            buildAddressField(),
+            buildLocationField(),
+            buildCheckboxRow(), //oo i see an issue
             buildDateRow(),
-            buildAllDayCheckbox(),
             buildTimeRow(),
-            buildCapacityField(),
-            buildVirtualRow(),
+            buildCapacityRow(),
             buildEventTypeDropdown(),
             buildClubDropdown(),
             buildTagsDropdown(),
             ElevatedButton(
               onPressed: () async {
-                if (eventFormKey.currentState!.validate()) {
-                  selectedImageUrl = await imageService.uploadImageToImgbb(selectedImage);
-                  if (selectedImageUrl == null){
-                    print("ImageURL is null");
+                if(!submitClicked){
+                  Set<FormFieldState<Object?>> validations = eventFormKey.currentState!.validateGranularly();
+                    if (validations != null && validations.isNotEmpty) {
+                      String err = validations.first.errorText ?? 'Form validation failed for unknown reason.';
+                      if(mounted){
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Form Validation Failed: $err')),
+                        );
+                      }
+                      return;
+                    }
+                  try {
+                    ///put loading thing here?
+                    submitClicked = true;
+                    if(mounted){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Uploading...')),
+                      );
+                    }
+                    if (selectedImage != null) {
+                      debugPrint("Awaiting Image Upload");
+                      selectedImageUrl = await imageService.uploadImageToImgbb(selectedImage!);
+                      debugPrint("Image Uploaded");
+                      if (selectedImageUrl == null) {
+                        if(mounted){
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('ImageURL is null.')),
+                          );
+                        }
+                      }
+                    }
+                    debugPrint("Awaiting Upload");
+                    await submitForm();
+                    submitClicked = false;
+                    if(mounted){
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Event Uploaded Successfully.')),
+                      );
+                    }        
+                    debugPrint("Event Tried Uploading");
+                  } catch (e) {
+                    submitClicked = false;
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to Upload Form: $e')),
+                      );
+                    }
                   }
-                  submitForm();
+                } else {
+                  if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Still uploading form. Image Uploading Can Take  a Long Time.')),
+                      );
+                    }
                 }
               },
-              child: const Text('Submit'),
+              child: Text('Submit'),
             ),
           ],
         ),
@@ -721,3 +832,6 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 }
+
+
+///Things to add: way to go back maybe?? like cancel? idk

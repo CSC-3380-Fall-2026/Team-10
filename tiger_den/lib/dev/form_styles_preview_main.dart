@@ -16,7 +16,7 @@ void main() {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => Theme(
+      builder: (BuildContext context, Widget? child) => Theme(
         data: context.style.theme,
         child: child!,
       ),
@@ -33,14 +33,14 @@ class FormStylesPreviewPage extends StatefulWidget {
 }
 
 class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
-  final _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   String? _category;
   String? _visibility = 'public';
   bool _allDay = false;
   bool _agreed = false;
 
   void _submit() {
-    final valid = _formKey.currentState!.validate();
+    final bool valid = _formKey.currentState!.validate();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(valid
           ? 'Everything is valid!'
@@ -50,8 +50,8 @@ class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final style = context.style;
-    final gap = SizedBox(height: style.spaceMedium);
+    final AppStyle style = context.style;
+    final SizedBox gap = SizedBox(height: style.spaceMedium);
 
     Widget heading(String text) => Padding(
           padding: EdgeInsets.only(
@@ -65,7 +65,7 @@ class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            children: [
+            children: <Widget>[
               heading('Text boxes'),
               const AppTextField(
                 label: 'Full Name',
@@ -80,7 +80,7 @@ class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
                 isRequired: true,
                 keyboardType: TextInputType.emailAddress,
                 prefixIcon: Icons.email_outlined,
-                validator: (value) =>
+                validator: (String? value) =>
                     value!.contains('@') ? null : 'Enter a valid email',
               ),
               gap,
@@ -112,30 +112,30 @@ class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
                 isRequired: true,
                 value: _category,
                 prefixIcon: Icons.category_outlined,
-                options: const [
+                options: const <AppDropdownOption<String>>[
                   AppDropdownOption('academic', 'Academic'),
                   AppDropdownOption('sport', 'Sports'),
                   AppDropdownOption('cultural', 'Cultural'),
                   AppDropdownOption('social', 'Social'),
                 ],
-                onChanged: (value) => setState(() => _category = value),
+                onChanged: (String? value) => setState(() => _category = value),
               ),
               gap,
               AppDropdown<String>(
                 label: 'Visibility',
                 value: _visibility,
-                options: const [
+                options: const <AppDropdownOption<String>>[
                   AppDropdownOption('public', 'Public'),
                   AppDropdownOption('membersOnly', 'Members only'),
                 ],
-                onChanged: (value) => setState(() => _visibility = value),
+                onChanged: (String? value) => setState(() => _visibility = value),
               ),
               gap,
               AppDropdown<String>(
                 label: 'Disabled dropdown',
                 value: 'a',
                 enabled: false,
-                options: const [AppDropdownOption('a', 'Can\'t change this')],
+                options: const <AppDropdownOption<String>>[AppDropdownOption('a', 'Can\'t change this')],
                 onChanged: (_) {},
               ),
 
@@ -143,7 +143,7 @@ class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
               AppCheckbox(
                 label: 'All-day event',
                 value: _allDay,
-                onChanged: (value) => setState(() => _allDay = value),
+                onChanged: (bool value) => setState(() => _allDay = value),
               ),
               AppCheckbox(
                 label: 'I agree to the Terms and Conditions',
@@ -151,7 +151,7 @@ class _FormStylesPreviewPageState extends State<FormStylesPreviewPage> {
                 value: _agreed,
                 mustBeChecked: true,
                 errorText: 'You must agree to continue',
-                onChanged: (value) => setState(() => _agreed = value),
+                onChanged: (bool value) => setState(() => _agreed = value),
               ),
               AppCheckbox(
                 label: 'Disabled checkbox',

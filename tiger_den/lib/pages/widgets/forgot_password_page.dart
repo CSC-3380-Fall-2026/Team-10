@@ -26,7 +26,7 @@ class ForgotPasswordPage extends StatefulWidget {
 /// Stores the state and form data for ForgotPasswordPage
 class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   /// The key used to validate this form
-  final formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   ///auth_service for password reset logic
   AuthService authService = AuthService();
   /// The controller for the email field
@@ -77,7 +77,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
       errorMessage = null;
     });
 
-    final email = emailController.text.trim();
+    final String email = emailController.text.trim();
 
     try {
       await authService.sendPasswordReset(email);
@@ -90,7 +90,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      final message = 'Error: $e\nAn unexpected error occurred. Please try again.';
+      final String message = 'Error: $e\nAn unexpected error occurred. Please try again.';
       setState(() => errorMessage = message);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -117,7 +117,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           settings: const RouteSettings(name: AuthRoutes.login),
-          builder: (context) => const LoginPage(),
+          builder: (BuildContext context) => const LoginPage(),
         ),
       );
     }
@@ -125,12 +125,12 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
 /// Builds back to login 
   Widget buildLoginNavigation() {
-    final style = context.style;
-    final colorScheme = Theme.of(context).colorScheme;
+    final AppStyle style = context.style;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [
+      children: <Widget>[
         Text(
           'Remembered your password?',
           style: style.textTheme.bodyMedium?.copyWith(
@@ -153,8 +153,8 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   /// Builds the app icon (idk this was in kade's)
   Widget buildIcon() {
-    final style = context.style;
-    final colorScheme = Theme.of(context).colorScheme;
+    final AppStyle style = context.style;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Center(
       child: Container(
@@ -175,11 +175,11 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   /// Builds the header titles
   Widget buildHeaderTitle() {
-    final style = context.style;
-    final colorScheme = Theme.of(context).colorScheme;
+    final AppStyle style = context.style;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     return Column(
-      children: [
+      children: <Widget>[
         Text(
           'Forgot Password',
           textAlign: TextAlign.center,
@@ -202,8 +202,8 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   /// Builds the error banner container if an error message exists
   Widget buildErrorBanner() {
-    final style = context.style;
-    final colorScheme = Theme.of(context).colorScheme;
+    final AppStyle style = context.style;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
 
     if (errorMessage == null) {
       return SizedBox.shrink();
@@ -216,7 +216,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
         borderRadius: BorderRadius.circular(style.radius),
       ),
       child: Row(
-        children: [
+        children: <Widget>[
           Icon(
             Icons.error_outline,
             color: colorScheme.onErrorContainer,
@@ -238,7 +238,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   /// Builds the email input field
   Widget buildEmailField() {
-    final colorScheme = Theme.of(context).colorScheme;
+    final ColorScheme colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: emailController,
       keyboardType: TextInputType.emailAddress,
@@ -255,7 +255,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.person_outline),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.trim().isEmpty) {
           return 'Please enter your email';
         }
@@ -266,7 +266,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   /// Builds the button used to request/send the reset link
   Widget buildSendLinkButton() {
-    final style = context.style;
+    final AppStyle style = context.style;
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
@@ -287,13 +287,13 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) { 
     // Access sitewide design variables from design_main.dart
-    final style = context.style;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final AppStyle style = context.style;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
 
     // Responsive form container max width for medium and expanded screens
-    final isCompact = style.screen == ScreenSize.compact;
-    final maxCardWidth = isCompact ? double.infinity : 460.0;
+    final bool isCompact = style.screen == ScreenSize.compact;
+    final double maxCardWidth = isCompact ? double.infinity : 460.0;
 
     return Scaffold(
       body: SafeArea(
@@ -326,7 +326,7 @@ class ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                      children: <Widget>[
                         buildIcon(),
                         SizedBox(height: style.spaceMedium),
                         buildHeaderTitle(),

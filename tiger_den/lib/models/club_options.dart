@@ -6,7 +6,7 @@ class ClubOptions {
   ClubOptions._();
 
   /// The categories a club can pick from.
-  static const List<String> categories = [
+  static const List<String> categories = <String>[
     'Academic',
     'Professional',
     'Cultural',
@@ -22,7 +22,7 @@ class ClubOptions {
   ];
 
   /// The days a club can say it meets on.
-  static const List<String> meetingDays = [
+  static const List<String> meetingDays = <String>[
     'Monday',
     'Tuesday',
     'Wednesday',
@@ -40,19 +40,19 @@ class ClubOptions {
     if (current == null || current.isEmpty || options.contains(current)) {
       return options;
     }
-    return [...options, current];
+    return <String>[...options, current];
   }
 
   /// Like [withCurrent], for several values (e.g. a club's existing tags).
   static List<String> withAll(List<String> options, Iterable<String> current) {
-    return [...options, ...current.where((v) => !options.contains(v))];
+    return <String>[...options, ...current.where((String v) => !options.contains(v))];
   }
 
   /// Formats a meeting time the same way every time it's saved, e.g. "6:00 PM".
   static String formatTime(TimeOfDay time) {
-    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    final int hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final String minute = time.minute.toString().padLeft(2, '0');
+    final String period = time.period == DayPeriod.am ? 'AM' : 'PM';
     return '$hour:$minute $period';
   }
 
@@ -60,12 +60,12 @@ class ClubOptions {
   /// Returns null if the text isn't a time.
   static TimeOfDay? parseTime(String? text) {
     if (text == null) return null;
-    final match = RegExp(r'^\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])?\s*$')
+    final RegExpMatch? match = RegExp(r'^\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])?\s*$')
         .firstMatch(text);
     if (match == null) return null;
-    var hour = int.parse(match.group(1)!);
-    final minute = int.parse(match.group(2)!);
-    final period = match.group(3)?.toUpperCase();
+    int hour = int.parse(match.group(1)!);
+    final int minute = int.parse(match.group(2)!);
+    final String? period = match.group(3)?.toUpperCase();
     if (period == 'PM' && hour < 12) hour += 12;
     if (period == 'AM' && hour == 12) hour = 0;
     if (hour > 23 || minute > 59) return null;

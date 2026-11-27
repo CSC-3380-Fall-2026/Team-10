@@ -36,12 +36,12 @@ class SessionTestPage extends StatefulWidget {
 }
 
 class _SessionTestPageState extends State<SessionTestPage> {
-  final _session = SessionService.instance;
-  final _me = CurrentUserService.instance;
+  final SessionService _session = SessionService.instance;
+  final CurrentUserService _me = CurrentUserService.instance;
   bool _busy = false;
 
   Future<void> _run(Future<void> Function() action) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
       await action();
@@ -61,9 +61,9 @@ class _SessionTestPageState extends State<SessionTestPage> {
   /// Creates the profile document for the logged-in test account,
   /// using the matching entry in test_accounts.dart.
   Future<void> _createTestProfile() async {
-    final s = _session.session!;
-    final account = testAccounts.firstWhere(
-      (a) => a.email == s.email,
+    final Session s = _session.session!;
+    final TestAccount account = testAccounts.firstWhere(
+      (TestAccount a) => a.email == s.email,
       orElse: () => TestAccount('Test User', s.email ?? '', '', 'test_user'),
     );
     await FirestoreService().createUserProfile(AppUser(
@@ -76,7 +76,7 @@ class _SessionTestPageState extends State<SessionTestPage> {
       bio: 'TEST LOGIN ACCOUNT: ${account.label}',
       major: 'Test Major',
       gradYear: 2028,
-      interests: ['testing'],
+      interests: <String>['testing'],
     ));
   }
 
@@ -85,23 +85,23 @@ class _SessionTestPageState extends State<SessionTestPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Session Test (dev only)')),
       body: ListenableBuilder(
-        listenable: Listenable.merge([_session, _me]),
-        builder: (context, _) {
+        listenable: Listenable.merge(<Listenable?>[_session, _me]),
+        builder: (BuildContext context, _) {
           if (!_session.isReady) {
             return const Center(child: CircularProgressIndicator());
           }
-          final s = _session.session;
-          final textTheme = Theme.of(context).textTheme;
+          final Session? s = _session.session;
+          final TextTheme textTheme = Theme.of(context).textTheme;
           return ListView(
             padding: const EdgeInsets.all(16),
-            children: [
+            children: <Widget>[
               // ---- Session -------------------------------------------------
               Text(
                 s == null ? 'Logged out' : 'Logged in',
                 style: textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              if (s != null) ...[
+              if (s != null) ...<Widget>[
                 SelectableText('User ID: ${s.uid}'),
                 Text('Email: ${s.email ?? '-'}'),
                 Text('Session ID: ${s.sessionId}'),
@@ -109,7 +109,7 @@ class _SessionTestPageState extends State<SessionTestPage> {
               ],
 
               // ---- Profile loaded into the session -------------------------
-              if (s != null) ...[
+              if (s != null) ...<Widget>[
                 const Divider(height: 32),
                 Text('Profile (users/${s.uid})', style: textTheme.titleMedium),
                 const SizedBox(height: 8),
@@ -117,7 +117,7 @@ class _SessionTestPageState extends State<SessionTestPage> {
                   const Text('Loading profile...')
                 else if (_me.user != null)
                   _ProfileDetails(user: _me.user!)
-                else ...[
+                else ...<Widget>[
                   const Text('No profile found for this account.'),
                   const SizedBox(height: 8),
                   FilledButton.tonal(
@@ -129,7 +129,7 @@ class _SessionTestPageState extends State<SessionTestPage> {
 
               // ---- Buttons --------------------------------------------------
               const Divider(height: 32),
-              for (final account in testAccounts)
+              for (final TestAccount account in testAccounts)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: FilledButton(
@@ -154,7 +154,7 @@ class _SessionTestPageState extends State<SessionTestPage> {
 }
 
 class _ProfileDetails extends StatelessWidget {
-  const _ProfileDetails({required this.user});
+  const _ProfileDetails({required AppUser this.user});
 
   final AppUser user;
 
@@ -162,7 +162,7 @@ class _ProfileDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         Text('Display name: ${user.displayName}'),
         Text('Username: ${user.username}'),
         Text('Email: ${user.email}'),

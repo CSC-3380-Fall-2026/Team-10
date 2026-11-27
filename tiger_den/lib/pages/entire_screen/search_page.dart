@@ -18,13 +18,13 @@ class SearchPageState extends State<SearchPage> {
   /// Service used for search functions
   SearchService searchService = SearchService();
   /// List of results in the Search Index
-  List<SearchResult> _indexList = [];
+  List<SearchResult> _indexList = <SearchResult>[];
   /// Service used to grab the image url for display
   ImageService imageService = ImageService();
   /// Holds fetched image URLs in a Map to their objectID
-  Map<String, String> imageUrls = {};
+  Map<String, String> imageUrls = <String, String>{};
   /// List of current filters
-  List<String> currentFilters = [];
+  List<String> currentFilters = <String>[];
   /// Controller to track and reuse the current search query
   TextEditingController searchController = TextEditingController();
   /// Controller to scroll back to the top
@@ -65,7 +65,7 @@ class SearchPageState extends State<SearchPage> {
   }
   /// Fetches the image for a certain event or club
   Future<void> fetchImages(List<SearchResult> results) async {
-    for (var result in results) {
+    for (SearchResult result in results) {
       if (result['objectID'] != null) {
         if(result['type'] == 'event'){
           String objectId = result['objectID'];
@@ -141,7 +141,7 @@ class SearchPageState extends State<SearchPage> {
     int displayCount = (filteredList.length <= currentLimit) ? filteredList.length : currentLimit;
     return SliverList(
     delegate: SliverChildBuilderDelegate(
-        (context, index){ 
+        (BuildContext context, int index){ 
           SearchResult result = filteredList[index];
           String description = result['description'];
           String shortDes = ' ';
@@ -251,7 +251,7 @@ class SearchPageState extends State<SearchPage> {
       clubLoading = true;
       eventLoading = true;
     });
-    List<String> cat = [];
+    List<String> cat = <String>[];
     List<String> tag = List.from(currentFilters);
     if (currentFilters.contains("official")){
       cat.add("official");
@@ -264,7 +264,7 @@ class SearchPageState extends State<SearchPage> {
 
     List<Map<String, dynamic>>? results = await searchService.search(input: input, category: cat, selectedTags: tag);
     setState(() {
-      _indexList = results ?? [];
+      _indexList = results ?? <SearchResult>[];
       clubLimit = 5; 
       eventLimit = 5; 
       currentPage = 0;
@@ -286,7 +286,7 @@ class SearchPageState extends State<SearchPage> {
       ),
       child: TextField( 
         controller: searchController,
-        onSubmitted: (value) async {
+        onSubmitted: (String value) async {
           search();
         },
         decoration: InputDecoration(
@@ -327,11 +327,11 @@ class SearchPageState extends State<SearchPage> {
       width: context.style.width * 0.75,
             child: SafeArea(
         child: Column(
-          children: [
+          children: <Widget>[
             Expanded(
               child: FilterWidget(
                 alreadySelected: currentFilters,
-                onFiltersSubmitted: (updatedFilters) {
+                onFiltersSubmitted: (List<String> updatedFilters) {
                   setState(() {
                     currentFilters = updatedFilters;
                   });
@@ -384,14 +384,14 @@ class SearchPageState extends State<SearchPage> {
         foregroundColor: Colors.purple,
         backgroundColor: Colors.grey,
         title: const Text('Search'),
-        actions: const [SizedBox.shrink()],
+        actions: const <Widget>[SizedBox.shrink()],
       ),
       endDrawer: filterDrawer(),
       body: Padding( 
         padding: EdgeInsetsGeometry.symmetric(vertical: context.style.pageMargin), 
         child: CustomScrollView(
           controller: scrollController,
-          slivers: [
+          slivers: <Widget>[
             SliverToBoxAdapter(
               child: Builder(
                 builder: (BuildContext cont) {

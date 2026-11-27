@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'model_utils.dart';
 
+//To avoid issues and bugs, capacity will remain and act as max capacity. minCapacity is minium capcity
+
 enum EventVisibility { public, membersOnly }
 
 enum EventStatus { scheduled, cancelled, completed }
@@ -24,7 +26,7 @@ class EventLocation {
   });
 
   factory EventLocation.fromMap(dynamic raw) {
-    final m = dynamicMap(raw);
+    final Map<String, dynamic> m = dynamicMap(raw);
     return EventLocation(
       name: m['name'] ?? '',
       address: m['address'],
@@ -34,7 +36,7 @@ class EventLocation {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'name': name,
         'address': address,
         'geo': geo,
@@ -70,6 +72,8 @@ class Event {
 
   /// Null means unlimited.
   final int? capacity;
+  ///Null means no min
+  final int? minCapacity;
   final int attendeeCount;
 
   final EventVisibility visibility;
@@ -90,14 +94,15 @@ class Event {
     required this.location,
     this.description = '',
     this.category = '',
-    this.tags = const [],
+    this.tags = const <String>[],
     this.imageUrl,
     this.organizationId,
     this.organizationName,
-    this.hostIds = const [],
+    this.hostIds = const <String>[],
     this.allDay = false,
     this.timezone = 'America/Chicago',
     this.capacity,
+    int? this.minCapacity,
     this.attendeeCount = 0,
     this.visibility = EventVisibility.public,
     this.status = EventStatus.scheduled,
@@ -107,7 +112,7 @@ class Event {
   });
 
   factory Event.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Event(
       id: doc.id,
       title: d['title'] ?? '',
@@ -125,6 +130,7 @@ class Event {
       timezone: d['timezone'] ?? 'America/Chicago',
       location: EventLocation.fromMap(d['location']),
       capacity: d['capacity'],
+      minCapacity: d['minCapacity'],
       attendeeCount: d['attendeeCount'] ?? 0,
       visibility: enumFrom(
           EventVisibility.values, d['visibility'], EventVisibility.public),
@@ -135,7 +141,7 @@ class Event {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'title': title,
         'description': description,
         'category': category,
@@ -151,6 +157,7 @@ class Event {
         'timezone': timezone,
         'location': location.toMap(),
         'capacity': capacity,
+        'minCapacity': minCapacity,
         'attendeeCount': attendeeCount,
         'visibility': visibility.name,
         'status': status.name,
@@ -174,7 +181,7 @@ class Attendee {
   });
 
   factory Attendee.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Attendee(
       userId: doc.id,
       displayName: d['displayName'] ?? '',
@@ -183,7 +190,7 @@ class Attendee {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'displayName': displayName,
         'status': status.name,
       };

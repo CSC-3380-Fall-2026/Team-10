@@ -43,7 +43,7 @@ class EventEditTestPage extends StatefulWidget {
 }
 
 class _EventEditTestPageState extends State<EventEditTestPage> {
-  static const _testUsers = {
+  static const Map<String, String> _testUsers = <String, String>{
     'test_user_a': 'User A (created User A\'s Event)',
     'test_user_b': 'User B (host of User A\'s Event)',
     'test_user_c': 'User C (attendee only)',
@@ -61,7 +61,7 @@ class _EventEditTestPageState extends State<EventEditTestPage> {
       .orderBy('startTime', descending: true)
       .limit(30)
       .snapshots()
-      .map((snap) => snap.docs.map(Event.fromDoc).toList());
+      .map((QuerySnapshot<Map<String, dynamic>> snap) => snap.docs.map(Event.fromDoc).toList());
 
   void _openEditor(Event event) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -83,22 +83,22 @@ class _EventEditTestPageState extends State<EventEditTestPage> {
       appBar: AppBar(title: const Text('Event Edit Test (dev only)')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
+        children: <Widget>[
           DropdownButtonFormField<String>(
             initialValue: _userId,
             decoration: const InputDecoration(labelText: 'Test as'),
-            items: [
-              for (final entry in _testUsers.entries)
+            items: <DropdownMenuItem<String>>[
+              for (final MapEntry<String, String> entry in _testUsers.entries)
                 DropdownMenuItem(value: entry.key, child: Text(entry.value)),
             ],
-            onChanged: (value) => setState(() => _userId = value!),
+            onChanged: (String? value) => setState(() => _userId = value!),
           ),
           const SizedBox(height: 24),
           Text('Tap an event to edit it',
               style: Theme.of(context).textTheme.titleMedium),
           StreamBuilder<List<Event>>(
             stream: _events,
-            builder: (context, snapshot) {
+            builder: (BuildContext context, AsyncSnapshot<List<Event>> snapshot) {
               if (snapshot.hasError) {
                 return Text('Could not load events: ${snapshot.error}');
               }
@@ -108,11 +108,11 @@ class _EventEditTestPageState extends State<EventEditTestPage> {
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
-              final events = snapshot.data!;
+              final List<Event> events = snapshot.data!;
               if (events.isEmpty) return const Text('No events found.');
               return Column(
-                children: [
-                  for (final event in events)
+                children: <Widget>[
+                  for (final Event event in events)
                     ListTile(
                       title: Text(event.title),
                       subtitle: Text(

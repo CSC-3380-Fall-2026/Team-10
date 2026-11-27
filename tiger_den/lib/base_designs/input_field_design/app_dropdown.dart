@@ -6,7 +6,7 @@ import 'input_decoration.dart';
 /// One choice in an [AppDropdown]: the [value] your code uses, and the
 /// [label] the user sees.
 class AppDropdownOption<T> {
-  const AppDropdownOption(this.value, this.label);
+  const AppDropdownOption(T this.value, String this.label);
 
   final T value;
   final String label;
@@ -31,17 +31,17 @@ class AppDropdownOption<T> {
 /// later, give the dropdown a new `key` so it rebuilds with the new value.
 class AppDropdown<T> extends StatelessWidget {
   const AppDropdown({
-    super.key,
-    required this.label,
-    required this.options,
-    required this.onChanged,
-    this.value,
-    this.hint,
-    this.helperText,
-    this.isRequired = false,
-    this.validator,
-    this.enabled = true,
-    this.prefixIcon,
+    Key? super.key,
+    required String this.label,
+    required List<AppDropdownOption<T>> this.options,
+    required void Function(T?) this.onChanged,
+    T? this.value,
+    String? this.hint,
+    String? this.helperText,
+    bool this.isRequired = false,
+    String? Function(T?)? this.validator,
+    bool this.enabled = true,
+    IconData? this.prefixIcon,
   });
 
   /// Text shown on the field, e.g. "Category".
@@ -81,11 +81,11 @@ class AppDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = context.style;
+    final AppStyle style = context.style;
     return DropdownButtonFormField<T>(
       initialValue: value,
-      items: [
-        for (final option in options)
+      items: <DropdownMenuItem<T>>[
+        for (final AppDropdownOption<T> option in options)
           DropdownMenuItem<T>(
             value: option.value,
             child: Text(option.label, overflow: TextOverflow.ellipsis),

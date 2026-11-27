@@ -1,5 +1,5 @@
 class TagService {
-  static const List<String> _tags = [
+  static const List<String> _tags = <String>[
     'Academic',
     'Career Development',
     'Social Justice',
@@ -68,8 +68,8 @@ class TagService {
     'LSU Museums'
     ];
 
-  static const Map<String, List<String>> _categorizedTags = {
-    'Format': [
+  static const Map<String, List<String>> _categorizedTags = <String, List<String>>{
+    'Format': <String>[
       'Lecture',
       'Meeting',
       'Social',
@@ -81,17 +81,17 @@ class TagService {
       'On Campus',
       'Off Campus',
     ],
-    'Audience':[
+    'Audience':<String>[
       'For Undergraduate Students',
       'For Graduate Students',
       'For Online Students',
     ],
-    'Academics and Career': [
+    'Academics and Career': <String>[
       'Academic',
       'Career Development',
       'Internship',
     ],
-    'Arts and Hobbies': [
+    'Arts and Hobbies': <String>[
       'Hobby',
       'Visual Arts',
       'Crafts and Artisan Trades',
@@ -105,7 +105,7 @@ class TagService {
       'Literature',
       'Writing',
     ],
-    'Sports, Outdoors, and Wellness': [
+    'Sports, Outdoors, and Wellness': <String>[
       'Team Sport',
       'Individual Sport',
       'Physical Activity',
@@ -113,7 +113,7 @@ class TagService {
       'Travel',
       'Wellness and Health',
     ],
-    'Community, Culture, and Campus Involvement': [
+    'Community, Culture, and Campus Involvement': <String>[
       'Social Justice',
       'Public Outreach/Community',
       'Faith and Spiritual',
@@ -122,7 +122,7 @@ class TagService {
       'Student Government',
       'Greek Life',
     ],
-    'College and Campus': [
+    'College and Campus': <String>[
       'College of Agriculture',
       'College of Art & Design',
       'College of Business',

@@ -8,11 +8,12 @@ class FilterWidget extends StatefulWidget {
   final List<String> alreadySelected;
   /// Callback 
   final Function(List<String>) onFiltersSubmitted; 
-  const FilterWidget({
-    Key? key, 
-    required this.alreadySelected,
-    required this.onFiltersSubmitted,
-    }) : super(key: key);
+
+  const FilterWidget({ 
+    Key? super.key,
+    required List<String> this.alreadySelected,
+    required dynamic Function(List<String>) this.onFiltersSubmitted,
+    });
   
 @override
   State<FilterWidget> createState() => FilterWidgetState();
@@ -63,7 +64,7 @@ class FilterWidgetState extends State<FilterWidget> {
   /// Shows the title and the appropiate widget
   Widget showTitleAndList(String text, Widget widge, BuildContext cont){
     return Column(
-      children: [
+      children: <Widget>[
         displayTitle(text, cont),
         Padding (
           padding: EdgeInsets.all(cont.style.spaceSmall),
@@ -113,7 +114,7 @@ class FilterWidgetState extends State<FilterWidget> {
     return Column(
       children: orderedTags.entries.map((MapEntry<String, List<String>> entry) {
         return Column(
-          children: [
+          children: <Widget>[
             displayTagTitle(entry.key, context),
             listTags(entry.value), 
           ],
@@ -127,7 +128,7 @@ class FilterWidgetState extends State<FilterWidget> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: avTags.length,
-      itemBuilder: (context, index) {
+      itemBuilder: (BuildContext context, int index) {
         String tag = avTags[index];
         if(tag == "official" || tag == 'unofficial'){
           return SizedBox.shrink();
@@ -173,7 +174,7 @@ Widget selectAll() {
         if (value == true) {
           allSelected = true;
           selectText = "Deselect All";
-          for (var tag in availableTags) {
+          for (String tag in availableTags) {
             if (!selectedFilters.contains(tag)) {
               selectedFilters.add(tag);
             }
@@ -183,7 +184,7 @@ Widget selectAll() {
         } else {
           allSelected = false;
           selectText = "Select All";
-          for (var tag in availableTags) {
+          for (String tag in availableTags) {
             selectedFilters.remove(tag);
           }
           if (selectedFilters.contains("official")) selectedFilters.remove("official");
@@ -198,7 +199,7 @@ Widget selectAll() {
     bool offChecked = selectedFilters.contains("official");
     bool unoChecked = selectedFilters.contains("unofficial");
     return Column(
-      children: [
+      children: <Widget>[
         CheckboxListTile(
           title: Text("official"),
           value: offChecked,
@@ -262,12 +263,12 @@ Widget selectAll() {
     return /*Scaffold(
       body: */SafeArea(
         child: Stack(
-          children: [
+          children: <Widget>[
             SingleChildScrollView(
               controller: scrollController, 
               padding: EdgeInsets.all(context.style.spaceSmall),
               child: Column(
-                children: [
+                children: <Widget>[
                   selectAll(),
                   showTitleAndList("Category:", listCategories(), context),
                   showTitleAndList("Tags:", listTagNTitle(), context),

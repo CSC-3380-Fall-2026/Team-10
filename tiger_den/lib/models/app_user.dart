@@ -33,14 +33,14 @@ class AppUser {
     this.phone,
     this.major,
     this.gradYear,
-    this.interests = const [],
+    this.interests = const <String>[],
     this.createdAt,
     this.updatedAt,
   });
 
   /// Builds an AppUser from a document read out of Firestore.
   factory AppUser.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return AppUser(
       id: doc.id,
       email: d['email'] ?? '',
@@ -61,7 +61,7 @@ class AppUser {
 
   /// Converts this user into a map Firestore can save.
   /// (The id is not included because it's the document's name, not a field.)
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'email': email,
         'username': username,
         'displayName': displayName,

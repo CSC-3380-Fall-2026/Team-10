@@ -14,7 +14,7 @@ DateTime? dateFrom(dynamic value) {
 /// Turns a stored string like "going" back into an enum value like RsvpStatus.going.
 /// If the value is missing or unrecognized, returns [fallback] instead of crashing.
 T enumFrom<T extends Enum>(List<T> values, dynamic name, T fallback) {
-  for (final v in values) {
+  for (final T v in values) {
     if (v.name == name) return v;
   }
   return fallback;

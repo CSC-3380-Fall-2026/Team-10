@@ -40,8 +40,8 @@ InputDecoration appInputDecoration(
   IconData? prefixIcon,
   Widget? suffixIcon,
 }) {
-  final style = context.style;
-  final errorColor = Theme.of(context).colorScheme.error;
+  final AppStyle style = context.style;
+  final Color errorColor = Theme.of(context).colorScheme.error;
 
   OutlineInputBorder outline(Color color, [double width = 1]) =>
       OutlineInputBorder(
@@ -63,7 +63,7 @@ InputDecoration appInputDecoration(
       vertical: style.spaceMedium * 0.75,
     ),
     labelStyle: const TextStyle(color: AppInputColors.label),
-    floatingLabelStyle: WidgetStateTextStyle.resolveWith((states) {
+    floatingLabelStyle: WidgetStateTextStyle.resolveWith((Set<WidgetState> states) {
       if (states.contains(WidgetState.error)) {
         return TextStyle(color: errorColor);
       }
@@ -74,7 +74,7 @@ InputDecoration appInputDecoration(
     }),
     hintStyle: const TextStyle(color: AppInputColors.hint),
     prefixIconColor: WidgetStateColor.resolveWith(
-      (states) => states.contains(WidgetState.focused)
+      (Set<WidgetState> states) => states.contains(WidgetState.focused)
           ? AppColors.purple
           : AppInputColors.label,
     ),

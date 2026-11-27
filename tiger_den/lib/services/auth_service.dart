@@ -32,12 +32,12 @@ class AuthService {
     String firstName = '',
     String lastName = '',
   }) async {
-    final cred = await _auth.createUserWithEmailAndPassword(
+    final UserCredential cred = await _auth.createUserWithEmailAndPassword(
       email: email.trim(),
       password: password,
     );
 
-    final user = AppUser(
+    final AppUser user = AppUser(
       id: cred.user!.uid,
       email: email.trim(),
       username: username.trim(),
@@ -75,7 +75,7 @@ class AuthService {
   /// email "succeeds" but no email is sent. That's why the success message
   /// above says "If an account exists...".
   Future<void> sendPasswordReset(String email) async {
-    final trimmed = email.trim();
+    final String trimmed = email.trim();
     if (trimmed.isEmpty) {
       throw const PasswordResetException(
           'missing-email', 'Please enter your email address.');

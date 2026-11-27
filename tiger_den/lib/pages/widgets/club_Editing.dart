@@ -37,7 +37,7 @@ class ClubEditForm extends StatefulWidget {
 }
 
 class ClubEditFormState extends State<ClubEditForm> {
-  final clubFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> clubFormKey = GlobalKey<FormState>();
   late ImageService imageService;
   late FirestoreService firestoreService;
   late ImagePicker picker;
@@ -59,7 +59,7 @@ class ClubEditFormState extends State<ClubEditForm> {
   String? selectedCategory;
 
   /// The selected tags (from TagService, plus any the club already had)
-  List<String> selectedTags = [];
+  List<String> selectedTags = <String>[];
 
   /// The selected meeting day (from ClubOptions.meetingDays)
   String? selectedMeetingDay;
@@ -83,7 +83,7 @@ class ClubEditFormState extends State<ClubEditForm> {
   }
 
   bool canEdit() {
-    final org = organization;
+    final Organization? org = organization;
     if (org == null) return false;
     return org.ownerId == widget.currentUserId ||
         org.adminIds.contains(widget.currentUserId);
@@ -91,7 +91,7 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   Future<void> loadInitialData() async {
     try {
-      final org = await firestoreService.getOrganization(widget.orgId);
+      final Organization? org = await firestoreService.getOrganization(widget.orgId);
       if (!mounted) return;
       setState(() {
         organization = org;
@@ -116,9 +116,9 @@ class ClubEditFormState extends State<ClubEditForm> {
     contactEmailController.text = org.contactEmail ?? '';
     instagramController.text = org.socialLinks['instagram'] ?? '';
     discordController.text = org.socialLinks['discord'] ?? '';
-    final day = org.meetingInfo['day'];
+    final String? day = org.meetingInfo['day'];
     selectedMeetingDay = (day == null || day.isEmpty) ? null : day;
-    final time = org.meetingInfo['time'];
+    final String? time = org.meetingInfo['time'];
     selectedMeetingTime = ClubOptions.parseTime(time);
     oldMeetingTimeText =
         (selectedMeetingTime == null && time != null && time.isNotEmpty)
@@ -141,14 +141,14 @@ class ClubEditFormState extends State<ClubEditForm> {
   /// Picks an image from the gallery and compresses it with ImageService
   Future<void> pickImage({required bool isLogo}) async {
     try {
-      final image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
-      final compressed = await imageService.compressFile(image);
+      final XFile? compressed = await imageService.compressFile(image);
       if (compressed == null) {
         showMessage('Could not compress that image.');
         return;
       }
-      final size = await compressed.length();
+      final int size = await compressed.length();
       if (size >= 100000) {
         showMessage('Compressed size: $size bytes. File too large to upload.');
         return;
@@ -166,9 +166,9 @@ class ClubEditFormState extends State<ClubEditForm> {
   }
 
   Map<String, String> nonBlank(Map<String, String?> fields) {
-    final result = <String, String>{};
-    fields.forEach((key, value) {
-      final text = value?.trim() ?? '';
+    final Map<String, String> result = <String, String>{};
+    fields.forEach((String key, String? value) {
+      final String text = value?.trim() ?? '';
       if (text.isNotEmpty) result[key] = text;
     });
     return result;
@@ -206,21 +206,21 @@ class ClubEditFormState extends State<ClubEditForm> {
         }
       }
 
-      final email = contactEmailController.text.trim();
-      final meetingTime = selectedMeetingTime != null
+      final String email = contactEmailController.text.trim();
+      final String? meetingTime = selectedMeetingTime != null
           ? ClubOptions.formatTime(selectedMeetingTime!)
           : oldMeetingTimeText;
-      final changes = <String, dynamic>{
+      final Map<String, dynamic> changes = <String, dynamic>{
         'name': nameController.text.trim(),
         'description': descriptionController.text.trim(),
         'category': selectedCategory ?? '',
         'tags': selectedTags,
         'contactEmail': email.isEmpty ? null : email,
-        'socialLinks': nonBlank({
+        'socialLinks': nonBlank(<String, String?>{
           'instagram': instagramController.text,
           'discord': discordController.text,
         }),
-        'meetingInfo': nonBlank({
+        'meetingInfo': nonBlank(<String, String?>{
           'day': selectedMeetingDay,
           'time': meetingTime,
           'location': meetingLocationController.text,
@@ -236,7 +236,7 @@ class ClubEditFormState extends State<ClubEditForm> {
       await updateSearchIndex(changes);
 
       // Refresh so the page shows what's now saved (e.g. the new logo).
-      final saved = await firestoreService.getOrganization(widget.orgId);
+      final Organization? saved = await firestoreService.getOrganization(widget.orgId);
       if (mounted) {
         setState(() {
           organization = saved ?? organization;
@@ -315,7 +315,7 @@ class ClubEditFormState extends State<ClubEditForm> {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         Text('$label (tap to change)'),
         GestureDetector(
           onTap: () async => pickImage(isLogo: isLogo),
@@ -337,7 +337,7 @@ class ClubEditFormState extends State<ClubEditForm> {
         labelText: 'Club Name',
         border: UnderlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.trim().isEmpty) {
           return 'This section must be filled out.';
         }
@@ -358,14 +358,14 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   /// Category dropdown (required)
   Widget buildCategoryDropdown() {
-    final options =
+    final List<String> options =
         ClubOptions.withCurrent(ClubOptions.categories, selectedCategory);
     return FormField<String>(
       validator: (_) =>
           selectedCategory == null ? 'Select a category for this club' : null,
-      builder: (state) => Column(
+      builder: (FormFieldState<String> state) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <Widget>[
           DropdownMenu<String>(
             expandedInsets: EdgeInsets.zero,
             initialSelection: selectedCategory,
@@ -376,8 +376,8 @@ class ClubEditFormState extends State<ClubEditForm> {
                 setState(() => selectedCategory = value);
               }
             },
-            dropdownMenuEntries: [
-              for (final c in options)
+            dropdownMenuEntries: <DropdownMenuEntry<String>>[
+              for (final String c in options)
                 DropdownMenuEntry<String>(value: c, label: c),
             ],
           ),
@@ -391,12 +391,12 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   /// Tags multi-select, using the same TagService list as events
   Widget buildTagsDropdown() {
-    final options = ClubOptions.withAll(tagService.fetchTags(), selectedTags);
+    final List<String> options = ClubOptions.withAll(tagService.fetchTags(), selectedTags);
     return MultiDropdown<String>(
       controller: tagsController,
       fieldDecoration: FieldDecoration(hintText: 'Select Tags'),
       items: options
-          .map((tag) => DropdownItem(
+          .map((String tag) => DropdownItem(
                 label: tag,
                 value: tag,
                 selected: selectedTags.contains(tag),
@@ -416,8 +416,8 @@ class ClubEditFormState extends State<ClubEditForm> {
         labelText: 'Contact Email',
         border: UnderlineInputBorder(),
       ),
-      validator: (value) {
-        final text = value?.trim() ?? '';
+      validator: (String? value) {
+        final String text = value?.trim() ?? '';
         if (text.isEmpty) return null; //optional
         if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text)) {
           return 'Please enter a valid email address';
@@ -429,7 +429,7 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   Widget buildSocialLinksFields() {
     return Column(
-      children: [
+      children: <Widget>[
         TextFormField(
           controller: instagramController,
           decoration: const InputDecoration(labelText: 'Instagram Link'),
@@ -444,29 +444,29 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   /// Meeting day dropdown, meeting time picker, and meeting location
   Widget buildMeetingInfoFields() {
-    final days =
+    final List<String> days =
         ClubOptions.withCurrent(ClubOptions.meetingDays, selectedMeetingDay);
-    final timeText = selectedMeetingTime != null
+    final String timeText = selectedMeetingTime != null
         ? ClubOptions.formatTime(selectedMeetingTime!)
         : (oldMeetingTimeText ?? 'Meeting Time');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         DropdownMenu<String>(
           expandedInsets: EdgeInsets.zero,
           initialSelection: selectedMeetingDay,
           label: const Text('Meeting Day'),
           onSelected: (String? value) =>
               setState(() => selectedMeetingDay = value),
-          dropdownMenuEntries: [
-            for (final d in days) DropdownMenuEntry<String>(value: d, label: d),
+          dropdownMenuEntries: <DropdownMenuEntry<String>>[
+            for (final String d in days) DropdownMenuEntry<String>(value: d, label: d),
           ],
         ),
         Row(
-          children: [
+          children: <Widget>[
             ElevatedButton(
               onPressed: () async {
-                final picked = await showTimePicker(
+                final TimeOfDay? picked = await showTimePicker(
                   context: context,
                   initialTime: selectedMeetingTime ??
                       const TimeOfDay(hour: 18, minute: 0),
@@ -500,7 +500,7 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   Widget buildIsPublicRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Checkbox(
           value: isPublic,
           onChanged: (bool? value) {
@@ -516,7 +516,7 @@ class ClubEditFormState extends State<ClubEditForm> {
 
   Widget buildRequiresApprovalRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Checkbox(
           value: requiresApproval,
           onChanged: (bool? value) {

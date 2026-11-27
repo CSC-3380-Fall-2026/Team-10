@@ -16,7 +16,7 @@ class AppStyle {
   static const double _designWidth = 390;
   static const double maxContentWidth = 1200;
  
-  AppStyle._(this.width);
+  AppStyle._(double this.width);
   
   factory AppStyle.of(BuildContext context) =>
       AppStyle._(MediaQuery.sizeOf(context).width);
@@ -125,7 +125,7 @@ extension AppStyleContext on BuildContext {
 }
  
 class MainApp extends StatelessWidget {
-  const MainApp({super.key, required this.child});
+  const MainApp({Key? super.key, required Widget this.child});
   final Widget child;
  
   @override

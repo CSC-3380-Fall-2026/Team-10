@@ -38,7 +38,7 @@ class LoginPage extends StatefulWidget {
 typedef LoginScreen = LoginPage;
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -75,8 +75,8 @@ class _LoginPageState extends State<LoginPage> {
       _errorMessage = null;
     });
 
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text;
 
     try {
       await _authService.logIn(email, password);
@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      final message = 'An unexpected error occurred. Please try again.';
+      final String message = 'An unexpected error occurred. Please try again.';
       setState(() => _errorMessage = message);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -150,7 +150,7 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: AuthRoutes.forgotPassword),
-        builder: (context) => const ForgotPasswordPage(),
+        builder: (BuildContext context) => const ForgotPasswordPage(),
       ),
     );
   }
@@ -158,13 +158,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     // Access the sitewide design variables from design_main.dart
-    final style = context.style;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final AppStyle style = context.style;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme colorScheme = theme.colorScheme;
 
     // Responsive form container max width for medium and expanded screens
-    final isCompact = style.screen == ScreenSize.compact;
-    final maxCardWidth = isCompact ? double.infinity : 460.0;
+    final bool isCompact = style.screen == ScreenSize.compact;
+    final double maxCardWidth = isCompact ? double.infinity : 460.0;
 
     return Scaffold(
       body: SafeArea(
@@ -197,7 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                      children: <Widget>[
                         // App Icon / Branding
                         Center(
                           child: Container(
@@ -236,7 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(height: style.spaceLarge),
 
                         // Error Banner (if any)
-                        if (_errorMessage != null) ...[
+                        if (_errorMessage != null) ...<Widget>[
                           Container(
                             padding: EdgeInsets.all(style.spaceSmall),
                             decoration: BoxDecoration(
@@ -244,7 +244,7 @@ class _LoginPageState extends State<LoginPage> {
                               borderRadius: BorderRadius.circular(style.radius),
                             ),
                             child: Row(
-                              children: [
+                              children: <Widget>[
                                 Icon(
                                   Icons.error_outline,
                                   color: colorScheme.onErrorContainer,
@@ -276,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
                             hintText: 'user@example.com',
                             prefixIcon: Icon(Icons.email_outlined),
                           ),
-                          validator: (value) {
+                          validator: (String? value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Please enter your email address';
                             }
@@ -316,7 +316,7 @@ class _LoginPageState extends State<LoginPage> {
                                   : 'Show password',
                             ),
                           ),
-                          validator: (value) {
+                          validator: (String? value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your password';
                             }
@@ -369,7 +369,7 @@ class _LoginPageState extends State<LoginPage> {
                         // Sign Up Row
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
+                          children: <Widget>[
                             Text(
                               "Don't have an account?",
                               style: style.textTheme.bodyMedium?.copyWith(
@@ -388,7 +388,7 @@ class _LoginPageState extends State<LoginPage> {
                                             settings: const RouteSettings(
                                               name: AuthRoutes.signUp,
                                             ),
-                                            builder: (context) =>
+                                            builder: (BuildContext context) =>
                                                 const SignUpPage(),
                                           ),
                                         );

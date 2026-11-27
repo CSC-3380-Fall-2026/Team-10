@@ -33,10 +33,10 @@ class PasswordResetTestPage extends StatefulWidget {
 }
 
 class _PasswordResetTestPageState extends State<PasswordResetTestPage> {
-  final _auth = AuthService();
-  final _resetEmail = TextEditingController();
-  final _loginEmail = TextEditingController();
-  final _loginPassword = TextEditingController();
+  final AuthService _auth = AuthService();
+  final TextEditingController _resetEmail = TextEditingController();
+  final TextEditingController _loginEmail = TextEditingController();
+  final TextEditingController _loginPassword = TextEditingController();
 
   bool _busy = false;
   String? _resetResult;
@@ -54,7 +54,7 @@ class _PasswordResetTestPageState extends State<PasswordResetTestPage> {
 
   Future<void> _sendReset() async {
     setState(() => _busy = true);
-    final email = _resetEmail.text.trim();
+    final String email = _resetEmail.text.trim();
     try {
       await _auth.sendPasswordReset(email);
       _resetOk = true;
@@ -96,12 +96,12 @@ class _PasswordResetTestPageState extends State<PasswordResetTestPage> {
 
   @override
   Widget build(BuildContext context) {
-    final heading = Theme.of(context).textTheme.titleMedium;
+    final TextStyle? heading = Theme.of(context).textTheme.titleMedium;
     return Scaffold(
       appBar: AppBar(title: const Text('Password Reset Test (dev only)')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
+        children: <Widget>[
           Text('1. Send a reset email', style: heading),
           const SizedBox(height: 8),
           TextField(

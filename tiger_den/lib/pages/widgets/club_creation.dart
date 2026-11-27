@@ -40,7 +40,7 @@ class ClubCreateForm extends StatefulWidget {
 }
 
 class ClubCreateFormState extends State<ClubCreateForm> {
-  final clubFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> clubFormKey = GlobalKey<FormState>();
   late ImageService imageService;
   late FirestoreService firestoreService;
   late ImagePicker picker;
@@ -64,7 +64,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
   MultiSelectController<String> tagsController = MultiSelectController<String>();
 
   String? selectedCategory;
-  List<String> selectedTags = [];
+  List<String> selectedTags = <String>[];
   String? selectedMeetingDay;
   TimeOfDay? selectedMeetingTime;
 
@@ -82,7 +82,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
   /// Loads the current user's profile (needed to make them the owner)
   Future<void> loadInitialData() async {
     try {
-      final user = await firestoreService.getUser(widget.currentUserId);
+      final AppUser? user = await firestoreService.getUser(widget.currentUserId);
       if (!mounted) return;
       setState(() {
         owner = user;
@@ -109,14 +109,14 @@ class ClubCreateFormState extends State<ClubCreateForm> {
   /// Picks an image from the gallery and compresses it with ImageService
   Future<void> pickImage({required bool isLogo}) async {
     try {
-      final image = await picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
-      final compressed = await imageService.compressFile(image);
+      final XFile? compressed = await imageService.compressFile(image);
       if (compressed == null) {
         showMessage('Could not compress that image.');
         return;
       }
-      final size = await compressed.length();
+      final int size = await compressed.length();
       if (size >= 100000) {
         showMessage('Compressed size: $size bytes. File too large to upload.');
         return;
@@ -134,9 +134,9 @@ class ClubCreateFormState extends State<ClubCreateForm> {
   }
 
   Map<String, String> nonBlank(Map<String, String?> fields) {
-    final result = <String, String>{};
-    fields.forEach((key, value) {
-      final text = value?.trim() ?? '';
+    final Map<String, String> result = <String, String>{};
+    fields.forEach((String key, String? value) {
+      final String text = value?.trim() ?? '';
       if (text.isNotEmpty) result[key] = text;
     });
     return result;
@@ -149,7 +149,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
       showMessage('Form validation failed');
       return;
     }
-    final creator = owner;
+    final AppUser? creator = owner;
     if (creator == null) {
       showMessage('Your profile isn\'t loaded, so the club can\'t be created.');
       return;
@@ -176,8 +176,8 @@ class ClubCreateFormState extends State<ClubCreateForm> {
         }
       }
 
-      final email = contactEmailController.text.trim();
-      final newClub = Organization(
+      final String email = contactEmailController.text.trim();
+      final Organization newClub = Organization(
         id: '', // Firestore picks the ID
         name: nameController.text.trim(),
         ownerId: creator.id,
@@ -187,11 +187,11 @@ class ClubCreateFormState extends State<ClubCreateForm> {
         logoUrl: logoUrl,
         bannerUrl: bannerUrl,
         contactEmail: email.isEmpty ? null : email,
-        socialLinks: nonBlank({
+        socialLinks: nonBlank(<String, String?>{
           'instagram': instagramController.text,
           'discord': discordController.text,
         }),
-        meetingInfo: nonBlank({
+        meetingInfo: nonBlank(<String, String?>{
           'day': selectedMeetingDay,
           'time': selectedMeetingTime == null
               ? null
@@ -204,7 +204,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
 
       // Creates the club AND makes the creator its owner (in the club's
       // members list and in their "My Clubs" list), all in one step.
-      final newId = await firestoreService.createOrganization(newClub, creator);
+      final String newId = await firestoreService.createOrganization(newClub, creator);
       await addToSearchIndex(newId, newClub);
 
       if (mounted) {
@@ -258,7 +258,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
       tagsController.dispose();
       tagsController = MultiSelectController<String>();
       selectedCategory = null;
-      selectedTags = [];
+      selectedTags = <String>[];
       selectedMeetingDay = null;
       selectedMeetingTime = null;
       isPublic = true;
@@ -294,7 +294,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         Text('$label (optional, tap to choose)'),
         GestureDetector(
           onTap: () async => pickImage(isLogo: isLogo),
@@ -318,7 +318,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
         labelText: 'Club Name',
         border: UnderlineInputBorder(),
       ),
-      validator: (value) {
+      validator: (String? value) {
         if (value == null || value.trim().isEmpty) {
           return 'This section must be filled out.';
         }
@@ -342,9 +342,9 @@ class ClubCreateFormState extends State<ClubCreateForm> {
     return FormField<String>(
       validator: (_) =>
           selectedCategory == null ? 'Select a category for this club' : null,
-      builder: (state) => Column(
+      builder: (FormFieldState<String> state) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        children: <Widget>[
           DropdownMenu<String>(
             expandedInsets: EdgeInsets.zero,
             initialSelection: selectedCategory,
@@ -355,8 +355,8 @@ class ClubCreateFormState extends State<ClubCreateForm> {
                 setState(() => selectedCategory = value);
               }
             },
-            dropdownMenuEntries: [
-              for (final c in ClubOptions.categories)
+            dropdownMenuEntries: <DropdownMenuEntry<String>>[
+              for (final String c in ClubOptions.categories)
                 DropdownMenuEntry<String>(value: c, label: c),
             ],
           ),
@@ -375,7 +375,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
       fieldDecoration: FieldDecoration(hintText: 'Select Tags'),
       items: tagService
           .fetchTags()
-          .map((tag) => DropdownItem(
+          .map((String tag) => DropdownItem(
                 label: tag,
                 value: tag,
                 selected: selectedTags.contains(tag),
@@ -395,8 +395,8 @@ class ClubCreateFormState extends State<ClubCreateForm> {
         labelText: 'Contact Email',
         border: UnderlineInputBorder(),
       ),
-      validator: (value) {
-        final text = value?.trim() ?? '';
+      validator: (String? value) {
+        final String text = value?.trim() ?? '';
         if (text.isEmpty) return null; //optional
         if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text)) {
           return 'Please enter a valid email address';
@@ -408,7 +408,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
 
   Widget buildSocialLinksFields() {
     return Column(
-      children: [
+      children: <Widget>[
         TextFormField(
           controller: instagramController,
           decoration: const InputDecoration(labelText: 'Instagram Link'),
@@ -425,23 +425,23 @@ class ClubCreateFormState extends State<ClubCreateForm> {
   Widget buildMeetingInfoFields() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         DropdownMenu<String>(
           expandedInsets: EdgeInsets.zero,
           initialSelection: selectedMeetingDay,
           label: const Text('Meeting Day'),
           onSelected: (String? value) =>
               setState(() => selectedMeetingDay = value),
-          dropdownMenuEntries: [
-            for (final d in ClubOptions.meetingDays)
+          dropdownMenuEntries: <DropdownMenuEntry<String>>[
+            for (final String d in ClubOptions.meetingDays)
               DropdownMenuEntry<String>(value: d, label: d),
           ],
         ),
         Row(
-          children: [
+          children: <Widget>[
             ElevatedButton(
               onPressed: () async {
-                final picked = await showTimePicker(
+                final TimeOfDay? picked = await showTimePicker(
                   context: context,
                   initialTime: selectedMeetingTime ??
                       const TimeOfDay(hour: 18, minute: 0),
@@ -471,7 +471,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
 
   Widget buildIsPublicRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Checkbox(
           value: isPublic,
           onChanged: (bool? value) {
@@ -487,7 +487,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
 
   Widget buildRequiresApprovalRow() {
     return Row(
-      children: [
+      children: <Widget>[
         Checkbox(
           value: requiresApproval,
           onChanged: (bool? value) {
@@ -513,7 +513,7 @@ class ClubCreateFormState extends State<ClubCreateForm> {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
+        children: <Widget>[
           Text('"$createdOrgName" was created!'),
           const SizedBox(height: 4),
           const Text('You are its owner.'),

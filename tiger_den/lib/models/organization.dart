@@ -39,13 +39,13 @@ class Organization {
     required this.ownerId,
     this.description = '',
     this.category = '',
-    this.tags = const [],
+    this.tags = const <String>[],
     this.logoUrl,
     this.bannerUrl,
     this.contactEmail,
-    this.socialLinks = const {},
-    this.meetingInfo = const {},
-    this.adminIds = const [],
+    this.socialLinks = const <String, String>{},
+    this.meetingInfo = const <String, String>{},
+    this.adminIds = const <String>[],
     this.memberCount = 0,
     this.isPublic = true,
     this.requiresApproval = false,
@@ -54,7 +54,7 @@ class Organization {
   });
 
   factory Organization.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Organization(
       id: doc.id,
       name: d['name'] ?? '',
@@ -76,7 +76,7 @@ class Organization {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'name': name,
         'description': description,
         'category': category,
@@ -112,7 +112,7 @@ class OrgMember {
   });
 
   factory OrgMember.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return OrgMember(
       userId: doc.id,
       displayName: d['displayName'] ?? '',
@@ -122,7 +122,7 @@ class OrgMember {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'displayName': displayName,
         'role': role.name,
         'status': status.name,
@@ -149,7 +149,7 @@ class Membership {
   });
 
   factory Membership.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data() ?? {};
+    final Map<String, dynamic> d = doc.data() ?? <String, dynamic>{};
     return Membership(
       orgId: doc.id,
       orgName: d['orgName'] ?? '',
@@ -159,7 +159,7 @@ class Membership {
     );
   }
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toMap() => <String, dynamic>{
         'orgName': orgName,
         'role': role.name,
         'status': status.name,
