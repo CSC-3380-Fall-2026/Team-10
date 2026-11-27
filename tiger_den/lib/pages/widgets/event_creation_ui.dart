@@ -356,7 +356,7 @@ class EventCreationFormState extends State<EventCreationForm> {
         border: OutlineInputBorder(),
       ),
       validator: (String? value) {
-        if (value == null || value.isEmpty) {
+        if ((value == null || value.isEmpty) && !virtualChecked) {
           return 'You must fill this section out';
         }
         return null;
@@ -470,15 +470,29 @@ class EventCreationFormState extends State<EventCreationForm> {
 
   ///Builds the checkbox specifying whether the event is an all-day event
   Widget buildAllDayCheckbox() {
-    return Checkbox(
-      checkColor: Colors.white,
-      fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
-      value: allDayChecked,
-      onChanged: (bool? value) {
-        setState(() {
-          allDayChecked = value!;
-        });
-      },
+    return Expanded (
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Checkbox(
+              checkColor: Colors.white,
+              fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
+              value: allDayChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  allDayChecked = value!;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: Text(
+              "All Day?",
+              // style: context.,
+            )
+          ),
+        ]
+      )
     );
   }
 
@@ -573,10 +587,10 @@ class EventCreationFormState extends State<EventCreationForm> {
   ///Builds the text field for maximum attendee capacity
   Widget buildCapacityField(bool isMin) {
     TextEditingController control = capacityController;
-    String label = 'Max Capacity';
+    String label = 'Maxiumum Attendance';
     if(isMin){
       control = minCapController;
-      label = 'Min Capacity';
+      label = 'Minimum Attendance';
     }
     return TextFormField(
       controller: control,
@@ -597,41 +611,63 @@ class EventCreationFormState extends State<EventCreationForm> {
     );
   }
 
-  ///Builds the virtual event checkbox and the conditional meeting link input field
-  Widget buildVirtualRow() {
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Checkbox(
-            checkColor: Colors.white,
-            fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
-            value: virtualChecked,
-            onChanged: (bool? value) {
-              setState(() {
-                virtualChecked = value!;
-              });
-            },
-          ),
-        ),
-        
-        if (virtualChecked)
+  Widget buildVirtualCheckbox(){
+    return Expanded(
+      child: Row(
+        children: <Widget>[
           Expanded(
-            child: TextFormField(
-              controller: meetingLinkController,
-              decoration: InputDecoration(
-                labelText: 'Meeting Link',
-                border: OutlineInputBorder(),
-              ),
-              validator: (String? value) {
-                if ((value == null || value.isEmpty)) {
-                  return 'You must fill this section out';
-                }
-                return null;
+            child: Checkbox(
+              checkColor: Colors.white,
+              fillColor: WidgetStateProperty.resolveWith(checkBoxGetColor),
+              value: virtualChecked,
+              onChanged: (bool? value) {
+                setState(() {
+                  virtualChecked = value!;
+                });
               },
             ),
           ),
-      ],
+          Expanded(
+            child: Text(
+              "Virtual?",
+              // style: context.,
+            )
+          ),
+        ]
+      )
     );
+  }
+
+  ///Builds the virtual event checkbox, the conditional meeting link input field, and the all day checkbox
+  Widget buildCheckboxRow() {
+    return Row(
+        children: <Widget>[
+          buildVirtualCheckbox(),
+          Expanded(
+            child: Visibility(
+              visible: virtualChecked,
+              maintainSize: true,
+              maintainAnimation: true,
+              maintainState: true,
+              child: TextFormField(
+                controller: meetingLinkController,
+                decoration: InputDecoration(
+                  labelText: 'Link - Meeting',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (String? value) {
+                  if ((value == null || value.isEmpty)) {
+                    return 'You must fill this section out';
+                  }
+                  return null;
+                },
+              )
+            ),
+          ),
+          buildAllDayCheckbox(),
+        ],
+      );
+
   }
 
   ///Builds the dropdown to toggle between official organization events and other events
@@ -719,15 +755,14 @@ class EventCreationFormState extends State<EventCreationForm> {
       child: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            buildTitleField(),
             buildImageGetter(),
+            buildTitleField(),
             buildDescriptionField(),
             buildLocationField(),
+            buildCheckboxRow(), //oo i see an issue
             buildDateRow(),
-            buildAllDayCheckbox(),
             buildTimeRow(),
             buildCapacityRow(),
-            buildVirtualRow(),
             buildEventTypeDropdown(),
             buildClubDropdown(),
             buildTagsDropdown(),
@@ -736,10 +771,10 @@ class EventCreationFormState extends State<EventCreationForm> {
                 if(!submitClicked){
                   Set<FormFieldState<Object?>> validations = eventFormKey.currentState!.validateGranularly();
                     if (validations != null && validations.isNotEmpty) {
-                      String err = validations.first.errorText ?? "Form validation failed for unknown reason.";
+                      String err = validations.first.errorText ?? 'Form validation failed for unknown reason.';
                       if(mounted){
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Form Validation Failed: $err")),
+                          SnackBar(content: Text('Form Validation Failed: $err')),
                         );
                       }
                       return;
@@ -784,7 +819,7 @@ class EventCreationFormState extends State<EventCreationForm> {
                 } else {
                   if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Still uploading form. Image Uploading Takes a Long Time.")),
+                        SnackBar(content: Text('Still uploading form. Image Uploading Can Take  a Long Time.')),
                       );
                     }
                 }
