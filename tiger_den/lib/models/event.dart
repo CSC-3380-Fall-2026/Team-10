@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'model_utils.dart';
 
+//To avoid issues and bugs, capacity will remain and act as max capacity. minCapacity is minium capcity
+
 enum EventVisibility { public, membersOnly }
 
 enum EventStatus { scheduled, cancelled, completed }
@@ -70,6 +72,8 @@ class Event {
 
   /// Null means unlimited.
   final int? capacity;
+  ///Null means no min
+  final int? minCapacity;
   final int attendeeCount;
 
   final EventVisibility visibility;
@@ -98,6 +102,7 @@ class Event {
     this.allDay = false,
     this.timezone = 'America/Chicago',
     this.capacity,
+    int? this.minCapacity,
     this.attendeeCount = 0,
     this.visibility = EventVisibility.public,
     this.status = EventStatus.scheduled,
@@ -125,6 +130,7 @@ class Event {
       timezone: d['timezone'] ?? 'America/Chicago',
       location: EventLocation.fromMap(d['location']),
       capacity: d['capacity'],
+      minCapacity: d['minCapacity'],
       attendeeCount: d['attendeeCount'] ?? 0,
       visibility: enumFrom(
           EventVisibility.values, d['visibility'], EventVisibility.public),
@@ -151,6 +157,7 @@ class Event {
         'timezone': timezone,
         'location': location.toMap(),
         'capacity': capacity,
+        'minCapacity': minCapacity,
         'attendeeCount': attendeeCount,
         'visibility': visibility.name,
         'status': status.name,
